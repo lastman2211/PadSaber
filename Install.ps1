@@ -92,11 +92,23 @@ if (Get-Process -Name "Beat Saber" -ErrorAction SilentlyContinue) {
     exit 1
 }
 
+# One build of the mod per supported game version: dist\<version>\NonVRMod.dll. Pick the one matching this game.
+$supported = @(Get-ChildItem (Join-Path $here "dist") -Directory -ErrorAction SilentlyContinue |
+    Where-Object { Test-Path (Join-Path $_.FullName "NonVRMod.dll") } | ForEach-Object { $_.Name } | Sort-Object)
 $verFile = Join-Path $GameDir "BeatSaberVersion.txt"
-$ver = if (Test-Path $verFile) { (Get-Content $verFile -Raw).Trim() } else { "" }
-if ($ver -and -not $ver.StartsWith("1.40.8")) {
-    Write-Host "Warning: this mod targets Beat Saber 1.40.8 but found '$ver'. It may not work." -ForegroundColor Yellow
+$ver = if (Test-Path $verFile) { [regex]::Match((Get-Content $verFile -Raw), '^\s*(\d+\.\d+\.\d+)').Groups[1].Value } else { "" }
+if (-not $ver) {
+    Write-Host "Could not read the game version (BeatSaberVersion.txt is missing in $GameDir)." -ForegroundColor Red
+    exit 1
 }
+if ($supported -notcontains $ver) {
+    Write-Host "Beat Saber $ver is not supported by this mod." -ForegroundColor Red
+    Write-Host "Supported versions: $($supported -join ', ')"
+    Write-Host "Use one of those game versions (Steam: right-click Beat Saber > Properties > Betas) and run the installer again."
+    exit 1
+}
+Write-Host "Beat Saber ${ver}: supported."
+$modDll = Join-Path $here "dist\$ver\NonVRMod.dll"
 
 # BSIPA (the mod loader) - installed from its official release if missing.
 if (-not (Test-Path (Join-Path $GameDir "winhttp.dll")) -or -not (Test-Path (Join-Path $GameDir "IPA"))) {
@@ -122,6 +134,6 @@ if (-not (Test-Path (Join-Path $GameDir "winhttp.dll")) -or -not (Test-Path (Joi
 # The mod itself.
 $plugins = Join-Path $GameDir "Plugins"
 New-Item -ItemType Directory -Path $plugins -Force | Out-Null
-Copy-Item (Join-Path $here "dist\NonVRMod.dll") $plugins -Force
+Copy-Item $modDll $plugins -Force
 Write-Host ""
 Write-Host "Done. Start the game with Launch.bat (or from Steam / your launcher as usual)." -ForegroundColor Green

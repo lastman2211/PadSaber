@@ -11,6 +11,9 @@
     <!-- Point this at YOUR legitimate Steam install: dotnet build -p:BeatSaberDir="D:\Steam\steamapps\common\Beat Saber" -->
     <BeatSaberDir Condition="'$(BeatSaberDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Beat Saber</BeatSaberDir>
     <Managed>$(BeatSaberDir)\Beat Saber_Data\Managed</Managed>
+    <!-- The mod is built once per supported game version; the version (e.g. 1.40.8) is read from the install. -->
+    <GameVersionText Condition="Exists('$(BeatSaberDir)\BeatSaberVersion.txt')">$([System.IO.File]::ReadAllText('$(BeatSaberDir)\BeatSaberVersion.txt'))</GameVersionText>
+    <GameVersion>$([System.Text.RegularExpressions.Regex]::Match('$(GameVersionText)', '^\d+\.\d+\.\d+').Value)</GameVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,9 +39,16 @@
     <Reference Include="Unity.XR.Management"><HintPath>$(Managed)\Unity.XR.Management.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="manifest.json" />
-  </ItemGroup>
+  <!-- manifest.json is a template: its gameVersion is replaced with the version of the game being built against. -->
+  <Target Name="StampManifest" BeforeTargets="AssignTargetPaths">
+    <PropertyGroup>
+      <StampedManifest>$([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\manifest.json')), '"gameVersion":\s*"[^"]*"', '"gameVersion": "$(GameVersion)"'))</StampedManifest>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)manifest.stamped.json" Lines="$(StampedManifest)" Overwrite="true" />
+    <ItemGroup>
+      <EmbeddedResource Include="$(IntermediateOutputPath)manifest.stamped.json" LogicalName="NonVRMod.manifest.json" />
+    </ItemGroup>
+  </Target>
 
   <!-- Copies the built DLL into <BeatSaberDir>\Plugins when that folder exists. -->
   <Target Name="DeployPlugin" AfterTargets="Build" Condition="Exists('$(BeatSaberDir)\Plugins')">
