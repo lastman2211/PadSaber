@@ -7,17 +7,18 @@ namespace NonVRMod.Dodge
     /// <summary>
     /// Moves the fake head out of walls (side-step and duck). Polls ObstacleControllers ~15x/s, finds the nearest
     /// side-step / duck pose that clears every wall inside the lookahead distance, and eases toward it.
-    /// Uses renderer world bounds so it does not depend on obstacle internals.
+    /// Mirrors the game's own test (PlayerHeadAndObstacleInteraction): the head is a point, and a wall hurts when the point
+    /// is inside ObstacleController.bounds (the collision box, in the wall's local space). DodgeMargin pads that point.
     /// </summary>
     internal class AutoDodge : MonoBehaviour
     {
-        private const float HeadHalfW = 0.28f, HeadHalfH = 0.22f, HeadHalfD = 0.30f;
+        private const float HeadHalfD = 0.30f;
         private const float PollInterval = 0.066f;
 
         private readonly List<Bounds> _threats = new List<Bounds>();
         private readonly List<float> _heights = new List<float>();
         private Vector3 _target;
-        private float _nextPoll, _nextLog;
+        private float _nextPoll, _nextLog, _nextLog2;
 
         private void Update()
         {
@@ -46,7 +47,7 @@ namespace NonVRMod.Dodge
             _threats.Clear();
             foreach (var o in FindObjectsOfType<ObstacleController>())
             {
-                if (o == null || !o.gameObject.activeInHierarchy) continue;
+                if (o == null || !o.gameObject.activeInHierarchy || o.hasPassedAvoidedMark) continue; // the game ignores walls past the avoid mark too
                 if (!WorldBounds(o, out Bounds b)) continue;
                 // Wall overlaps the head's depth slab soon, and has not fully passed.
                 if (b.min.z <= cfg.LookaheadMeters && b.max.z >= -HeadHalfD) _threats.Add(b);
@@ -77,21 +78,41 @@ namespace NonVRMod.Dodge
             {
                 foreach (float h in _heights)
                 {
-                    int hits = CountHits(x, h);
+                    int hits = CountHits(x, h, cfg.DodgeMargin);
                     // Fewest walls first (none when possible; if nothing clears, the least-bad pose rather than freezing),
                     // then small moves. Ducking costs a little more than stepping, and flipping sides is discouraged.
                     float cost = hits * 100f + Mathf.Abs(x) + (stand - h) * 1.2f + Mathf.Abs(x - PoseProvider.HeadOffset.x) * 0.25f;
                     if (cost < bestCost) { bestCost = cost; best = new Vector3(x, h - stand, 0f); }
                 }
             }
+            if (cfg.DebugLog && Time.unscaledTime >= _nextLog2)
+            {
+                _nextLog2 = Time.unscaledTime + 0.5f;
+                var cam = PoseProvider.Cam;
+                Plugin.Log.Info($"AutoDodge choice=({best.x:0.00},{best.y:0.00}) cost={bestCost:0.0} heights={_heights.Count} autoDuck={cfg.AutoDuck} manualDuck={PoseProvider.ManualDuckHeld} " +
+                                $"camWorld={(cam != null ? cam.transform.position.ToString("0.00") : "none")} headOffset=({PoseProvider.HeadOffset.x:0.00},{PoseProvider.HeadOffset.y:0.00})");
+            }
             return best;
         }
 
-        // World-space box of a wall: union of all its child renderers (the frame and the core are separate meshes, and the
-        // first one found is not always the full wall). Falls back to the controller's own bounds.
+        // World-space box of a wall's collision bounds (ObstacleController.bounds is in the wall's local space; the game
+        // transforms the head point into that space). The 8 corners are transformed so a rotated (360 / 90) wall still works.
+        // The visual mesh is NOT used: it is larger than the collision box (a duck wall looked like it started at 0.8 m).
+        // Falls back to the renderers if the controller reports empty bounds.
         private static readonly List<Renderer> RendererBuf = new List<Renderer>();
         private static bool WorldBounds(ObstacleController o, out Bounds b)
         {
+            Bounds local = o.bounds;
+            if (local.size.sqrMagnitude > 1e-4f)
+            {
+                Transform t = o.transform;
+                Vector3 c = local.center, e = local.extents;
+                b = new Bounds(t.TransformPoint(c + new Vector3(-e.x, -e.y, -e.z)), Vector3.zero);
+                for (int i = 1; i < 8; i++)
+                    b.Encapsulate(t.TransformPoint(c + new Vector3((i & 1) == 0 ? -e.x : e.x, (i & 2) == 0 ? -e.y : e.y, (i & 4) == 0 ? -e.z : e.z)));
+                return true;
+            }
+
             b = default;
             bool any = false;
             o.GetComponentsInChildren(true, RendererBuf);
@@ -102,18 +123,17 @@ namespace NonVRMod.Dodge
                 else b.Encapsulate(r.bounds);
             }
             RendererBuf.Clear();
-            if (any && b.size.sqrMagnitude > 1e-4f) return true;
-            b = o.bounds;
-            return b.size.sqrMagnitude > 1e-4f;
+            return any && b.size.sqrMagnitude > 1e-4f;
         }
 
-        private int CountHits(float x, float y)
+        // The head is a point in the game; the margin covers the time it takes the view to ease into place.
+        private int CountHits(float x, float y, float margin)
         {
             int n = 0;
             foreach (var b in _threats)
             {
-                bool xOverlap = x + HeadHalfW > b.min.x && x - HeadHalfW < b.max.x;
-                bool yOverlap = y + HeadHalfH > b.min.y && y - HeadHalfH < b.max.y;
+                bool xOverlap = x + margin > b.min.x && x - margin < b.max.x;
+                bool yOverlap = y + margin > b.min.y && y - margin < b.max.y;
                 if (xOverlap && yOverlap) n++;
             }
             return n;

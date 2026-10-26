@@ -18,7 +18,8 @@ namespace NonVRMod
         public virtual float DodgeSpeed { get; set; } = 6f;
         public virtual bool ManualDodge { get; set; } = true;       // LB/RB side-step, hold B to duck
         public virtual bool AutoDuck { get; set; } = true;          // auto-dodge also lowers the view under low walls (B still ducks by hand)
-        public virtual float AutoDuckMinHeight { get; set; } = 0.85f; // lowest the view may go for an automatic duck (meters)
+        public virtual float AutoDuckMinHeight { get; set; } = 0.5f;  // lowest the view may go for an automatic duck (meters)
+        public virtual float DodgeMargin { get; set; } = 0.12f;       // padding around the head point when testing walls (meters)
         public virtual bool DebugLog { get; set; } = false;         // verbose auto-dodge / aim-assist logging
 
         // Display

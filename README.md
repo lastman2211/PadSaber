@@ -39,7 +39,7 @@ Each stick sweeps its saber through an arc, so a flick is a swing and both hands
 | Pause | Start |
 | Hide on-screen hints | F9 |
 
-In menus the right stick turns the view and the laser stays at screen center. Sabers stay in place when you look around, as they would in VR. Auto-dodge steps sideways and ducks under low walls by itself. Hold B to duck by hand and LB/RB to side-step by hand; whichever axis you control, the other stays automatic. Rumble follows the game's own haptics (cuts and so on).
+In menus the right stick turns the view and the laser stays at screen center. Sabers stay in place when you look around, as they would in VR. Auto-dodge steps sideways and ducks under low walls by itself, and the sabers move with your body when you dodge. Hold B to duck by hand and LB/RB to side-step by hand; whichever axis you control, the other stays automatic. Rumble follows the game's own haptics (cuts and so on).
 
 ## Tuning
 Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first run) and restart the game.

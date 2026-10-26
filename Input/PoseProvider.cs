@@ -141,8 +141,10 @@ namespace NonVRMod.Input
             float cx = Curve(s.x, cfg.ResponseCurve), cy = Curve(s.y, cfg.ResponseCurve);
             float yaw = cx * cfg.MaxYaw * angleMul;
             float pitch = -cy * cfg.MaxPitch * angleMul + cfg.RestPitch; // stick up = saber tilts up (negative X euler = up)
-            pos = new Vector3(side * cfg.HandSpread + cx * cfg.HandShift,
-                              cfg.HandHeight + cy * cfg.HandShift,
+            // The hands travel with the body: when the head side-steps or ducks (auto-dodge, LB/RB, B) the sabers go with it,
+            // as they would in VR. Head turning does not move them. Ducking never drops the hands below ~0.35 m (the floor).
+            pos = new Vector3(side * cfg.HandSpread + cx * cfg.HandShift + HeadOffset.x,
+                              Mathf.Max(0.35f, cfg.HandHeight + cy * cfg.HandShift + HeadOffset.y),
                               cfg.HandDepth - cfg.HeadBack);
             AimAssist.Apply(cfg, color, pos, new Vector2(cx, cy), cfg.MaxYaw * angleMul, cfg.MaxPitch * angleMul, cfg.RestPitch, ref yaw, ref pitch);
             rot = Quaternion.Euler(pitch, yaw, 0f);
