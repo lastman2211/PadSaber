@@ -27,6 +27,8 @@ namespace NonVRMod.Dodge
                 Plugin.Log.Info($"Auto-dodge {(cfg.AutoDodge ? "ON" : "OFF")}");
             }
 
+            if (PoseProvider.ManualDodgeHeld) return; // manual lean/duck is overriding
+
             if (!cfg.AutoDodge) _target = Vector3.zero;
             else if (Time.unscaledTime >= _nextPoll)
             {

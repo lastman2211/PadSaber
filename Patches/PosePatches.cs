@@ -26,8 +26,8 @@ namespace NonVRMod.Patches
                 PatchUtil.Patch(h, t, "TryGetPoseOffsetForNode", typeof(PosePatches), prefix: nameof(PoseOffset));
                 PatchUtil.Patch(h, t, "GetRootPositionOffsetForLegacyNodePose", typeof(PosePatches), prefix: nameof(RootOffset));
                 PatchUtil.Patch(h, t, "TryGetLegacyPoseOffsetForNode", typeof(PosePatches), prefix: nameof(LegacyOffset));
-                PatchUtil.Patch(h, t, "TriggerHapticPulse", typeof(PosePatches), prefix: nameof(Skip));
-                PatchUtil.Patch(h, t, "StopHaptics", typeof(PosePatches), prefix: nameof(Skip));
+                PatchUtil.Patch(h, t, "TriggerHapticPulse", typeof(PosePatches), prefix: nameof(Haptic));
+                PatchUtil.Patch(h, t, "StopHaptics", typeof(PosePatches), prefix: nameof(HapticStop));
                 PatchUtil.Patch(h, t, "IsAdvancedHapticsSupported", typeof(PosePatches), prefix: nameof(False));
                 PatchUtil.Patch(h, t, "get_hasInputFocus", typeof(PosePatches), prefix: nameof(True));
                 PatchUtil.Patch(h, t, "get_hasVrFocus", typeof(PosePatches), prefix: nameof(True));
@@ -77,6 +77,27 @@ namespace NonVRMod.Patches
         {
             position = Vector3.zero; rotation = Vector3.zero; __result = true; return false;
         }
+        // Game haptics (cuts, etc.) drive the gamepad's rumble motors: left hand = left motor, right hand = right motor.
+        // With SwapSticks the hands swap motors too.
+        private static int Motor(XRNode node)
+        {
+            int m = node == XRNode.LeftHand ? 0 : node == XRNode.RightHand ? 1 : -1;
+            if (m >= 0 && PluginConfig.Instance != null && PluginConfig.Instance.SwapSticks) m = 1 - m;
+            return m;
+        }
+
+        private static bool Haptic(XRNode node, float duration, float strength)
+        {
+            XInput.Rumble(Motor(node), Mathf.Clamp(duration, 0.02f, 0.5f), strength);
+            return false;
+        }
+
+        private static bool HapticStop(XRNode node)
+        {
+            XInput.StopRumble(Motor(node));
+            return false;
+        }
+
         private static bool Skip() => false;
         private static bool False(ref bool __result) { __result = false; return false; }
         private static bool True(ref bool __result) { __result = true; return false; }

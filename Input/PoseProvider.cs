@@ -6,17 +6,23 @@ namespace NonVRMod.Input
 {
     /// <summary>
     /// Gamepad-only fake head + saber poses.
-    /// In songs each stick maps directly to its saber's position (left stick = left saber, right stick = right saber),
-    /// so a flick of the stick is a swing and the hands move independently. In menus the right stick moves a cursor
-    /// that the laser points at; A or RT clicks, the left stick scrolls. Start = pause.
+    /// Sticks sweep the sabers through arcs (see Pose). D-pad looks around, LB/RB side-step, B ducks, Y cycles the
+    /// sensitivity preset, X toggles the help panel. In menus the right stick moves a cursor the laser points at.
     /// </summary>
     internal class PoseProvider : MonoBehaviour
     {
         public static PoseProvider Instance { get; private set; }
 
-        // Head pose is written by AutoDodge (offset) and read by PosePatches.
+        public static readonly string[] PresetNames = { "Soft", "Normal", "Fast" };
+        // angle, follow speed, return speed multipliers per preset
+        private static readonly Vector3[] PresetMul = { new Vector3(0.8f, 0.7f, 0.8f), Vector3.one, new Vector3(1.2f, 1.4f, 1.5f) };
+
+        // Head pose is written by AutoDodge/manual dodge (offset) and read by PosePatches.
         public static Vector3 HeadOffset;   // x = side step, y = height delta from standing
         public static Vector3 HeadPosition => new Vector3(HeadOffset.x, PluginConfig.Instance.StandingHeadHeight + HeadOffset.y, -PluginConfig.Instance.HeadBack);
+        public static Quaternion HeadRotation { get; private set; } = Quaternion.identity;
+        public static float HeadYaw { get; private set; }
+        public static float HeadPitch { get; private set; }
 
         public static Vector3 LeftPos { get; private set; } = new Vector3(-0.3f, 1.15f, 0.7f);
         public static Vector3 RightPos { get; private set; } = new Vector3(0.3f, 1.15f, 0.7f);
@@ -31,9 +37,18 @@ namespace NonVRMod.Input
         public static bool InGame { get; private set; }
         public static Camera Cam { get; private set; }
         public static Vector2 CursorN { get; private set; } = new Vector2(0.5f, 0.5f); // menu cursor, 0..1 screen coords
+        public static bool ShowHelp { get; private set; }
+        public static float PresetShownUntil { get; private set; }
+
+        /// <summary>True while a manual dodge button is held; AutoDodge stays out of the way.</summary>
+        public static bool ManualDodgeHeld =>
+            PluginConfig.Instance.ManualDodge && (XInput.Held(XInput.LB) || XInput.Held(XInput.RB) || XInput.Held(XInput.B));
+
+        public static string PresetName => PresetNames[Mathf.Clamp(PluginConfig.Instance.Preset, 0, PresetNames.Length - 1)];
 
         private readonly List<TrackedPoseDriver> _drivers = new List<TrackedPoseDriver>();
         private float _nextFind;
+        private Vector2 _sl, _sr; // smoothed stick values
 
         private void Awake() => Instance = this;
 
@@ -41,7 +56,9 @@ namespace NonVRMod.Input
         {
             var cfg = PluginConfig.Instance;
             float dt = Time.unscaledDeltaTime;
+            XInput.Deadzone = cfg.StickDeadzone;
             XInput.Poll();
+            XInput.TickRumble(dt, cfg.Rumble ? cfg.RumbleStrength : 0f);
 
             if (Time.unscaledTime >= _nextFind)
             {
@@ -51,12 +68,27 @@ namespace NonVRMod.Input
                 InGame = FindObjectOfType<SaberManager>() != null;
             }
 
-            if (InGame) ApplyGameplayPoses(cfg, dt);
-            else ApplyMenuPoses(cfg, dt);
+            if (XInput.Down(XInput.Y))
+            {
+                cfg.Preset = (cfg.Preset + 1) % PresetNames.Length;
+                PresetShownUntil = Time.unscaledTime + 2f;
+            }
+            if (XInput.Down(XInput.X)) ShowHelp = !ShowHelp;
 
-            bool a = XInput.Held(XInput.A);
-            RightTrigger = Mathf.Max(XInput.RT, a ? 1f : 0f);
-            LeftTrigger = XInput.LT;
+            // Logical sticks/triggers (SwapSticks = left-handed layout).
+            Vector2 ls = new Vector2(XInput.LX, XInput.LY), rs = new Vector2(XInput.RX, XInput.RY);
+            float lt = XInput.LT, rt = XInput.RT;
+            if (cfg.SwapSticks) { var t = ls; ls = rs; rs = t; var tt = lt; lt = rt; rt = tt; }
+            if (cfg.InvertY) { ls.y = -ls.y; rs.y = -rs.y; }
+
+            if (InGame) ApplyGameplayPoses(cfg, ls, rs, dt);
+            else ApplyMenuPoses(cfg, rs, dt);
+
+            UpdateHead(cfg, dt);
+            UpdateManualDodge(cfg, dt);
+
+            RightTrigger = Mathf.Max(rt, XInput.Held(XInput.A) ? 1f : 0f);
+            LeftTrigger = lt;
             bool menuNow = XInput.Held(XInput.Start) || UnityEngine.Input.GetKey(KeyCode.Escape);
             MenuDown = menuNow && !MenuHeld;
             MenuHeld = menuNow;
@@ -66,46 +98,46 @@ namespace NonVRMod.Input
             Cursor.visible = false;
         }
 
-        // Smoothed stick values. Fast to follow the stick out, slow to return to center, so letting go of a stick
-        // doesn't produce a fast rebound swing that the game would count as a wrong-way cut.
-        private Vector2 _sl, _sr;
+        // ---- Sabers ---------------------------------------------------------------------------------------------
 
-        private void ApplyGameplayPoses(PluginConfig cfg, float dt)
+        private void ApplyGameplayPoses(PluginConfig cfg, Vector2 ls, Vector2 rs, float dt)
         {
-            _sl = Follow(_sl, new Vector2(XInput.LX, XInput.LY), cfg, dt);
-            _sr = Follow(_sr, new Vector2(XInput.RX, XInput.RY), cfg, dt);
-            Pose(cfg, -1f, _sl, out Vector3 pl, out Quaternion rl);
-            Pose(cfg, +1f, _sr, out Vector3 pr, out Quaternion rr);
+            Vector3 m = PresetMul[Mathf.Clamp(cfg.Preset, 0, PresetMul.Length - 1)];
+            _sl = Follow(_sl, ls, cfg.FollowSpeed * m.y, cfg.ReturnSpeed * m.z, dt);
+            _sr = Follow(_sr, rs, cfg.FollowSpeed * m.y, cfg.ReturnSpeed * m.z, dt);
+            Pose(cfg, m.x, -1f, _sl, out Vector3 pl, out Quaternion rl);
+            Pose(cfg, m.x, +1f, _sr, out Vector3 pr, out Quaternion rr);
             LeftPos = pl; LeftRot = rl; RightPos = pr; RightRot = rr;
         }
 
-        private static Vector2 Follow(Vector2 cur, Vector2 target, PluginConfig cfg, float dt)
+        // Fast to follow the stick out, slow to return to center, so letting go doesn't produce a fast rebound
+        // swing that the game would count as a wrong-way cut.
+        private static Vector2 Follow(Vector2 cur, Vector2 target, float followRate, float returnRate, float dt)
         {
-            bool outward = target.sqrMagnitude >= cur.sqrMagnitude;
-            float rate = outward ? cfg.FollowSpeed : cfg.ReturnSpeed;
+            float rate = target.sqrMagnitude >= cur.sqrMagnitude ? followRate : returnRate;
             return Vector2.Lerp(cur, target, 1f - Mathf.Exp(-rate * dt));
         }
 
         // Stick = where the saber points. The hand stays near its rest spot and pivots the saber, so a flick sweeps the
         // blade through an arc (like a wrist swing). Centered stick = saber pointing forward and slightly up.
-        private static void Pose(PluginConfig cfg, float side, Vector2 s, out Vector3 pos, out Quaternion rot)
+        private static void Pose(PluginConfig cfg, float angleMul, float side, Vector2 s, out Vector3 pos, out Quaternion rot)
         {
-            float cx = Curve(s.x), cy = Curve(s.y);
-            float yaw = cx * cfg.MaxYaw;
-            float pitch = -cy * cfg.MaxPitch + cfg.RestPitch; // stick up = saber tilts up (negative X euler = up)
+            float cx = Curve(s.x, cfg.ResponseCurve), cy = Curve(s.y, cfg.ResponseCurve);
+            float yaw = cx * cfg.MaxYaw * angleMul;
+            float pitch = -cy * cfg.MaxPitch * angleMul + cfg.RestPitch; // stick up = saber tilts up (negative X euler = up)
             rot = Quaternion.Euler(pitch, yaw, 0f);
             pos = new Vector3(side * cfg.HandSpread + cx * cfg.HandShift,
                               cfg.HandHeight + cy * cfg.HandShift,
                               cfg.HandDepth - cfg.HeadBack);
         }
 
-        private static float Curve(float v) => Mathf.Sign(v) * Mathf.Pow(Mathf.Abs(v), 1.2f);
+        private static float Curve(float v, float exp) => Mathf.Sign(v) * Mathf.Pow(Mathf.Abs(v), Mathf.Max(0.5f, exp));
 
         // Menus: park the left hand, move a cursor with the right stick, point the right laser through it.
-        private void ApplyMenuPoses(PluginConfig cfg, float dt)
+        private void ApplyMenuPoses(PluginConfig cfg, Vector2 rs, float dt)
         {
-            CursorN = new Vector2(Mathf.Clamp01(CursorN.x + XInput.RX * cfg.CursorSpeed * dt),
-                                  Mathf.Clamp01(CursorN.y + XInput.RY * cfg.CursorSpeed * dt));
+            CursorN = new Vector2(Mathf.Clamp01(CursorN.x + rs.x * cfg.CursorSpeed * dt),
+                                  Mathf.Clamp01(CursorN.y + rs.y * cfg.CursorSpeed * dt));
             Vector3 head = HeadPosition;
             LeftPos = head + new Vector3(-0.25f, -0.4f, 0.35f);
             RightPos = head + new Vector3(0.25f, -0.4f, 0.35f);
@@ -117,6 +149,47 @@ namespace NonVRMod.Input
             if (dir.sqrMagnitude > 1e-4f) RightRot = Quaternion.LookRotation(dir.normalized);
         }
 
+        // ---- Head -----------------------------------------------------------------------------------------------
+
+        // D-pad looks around (in songs only; menus keep the view centered so the cursor stays aligned).
+        // Clicking either stick recenters.
+        private void UpdateHead(PluginConfig cfg, float dt)
+        {
+            float dx = (XInput.Held(XInput.DRight) ? 1f : 0f) - (XInput.Held(XInput.DLeft) ? 1f : 0f);
+            float dy = (XInput.Held(XInput.DUp) ? 1f : 0f) - (XInput.Held(XInput.DDown) ? 1f : 0f);
+            if (cfg.InvertY) dy = -dy;
+
+            if (!InGame || XInput.Down(XInput.L3) || XInput.Down(XInput.R3))
+            {
+                HeadYaw = Mathf.MoveTowards(HeadYaw, 0f, 400f * dt);
+                HeadPitch = Mathf.MoveTowards(HeadPitch, 0f, 400f * dt);
+            }
+            else
+            {
+                if (dx != 0f || dy != 0f)
+                {
+                    HeadYaw = Mathf.Clamp(HeadYaw + dx * cfg.LookSpeed * dt, -cfg.HeadMaxYaw, cfg.HeadMaxYaw);
+                    HeadPitch = Mathf.Clamp(HeadPitch - dy * cfg.LookSpeed * dt, -cfg.HeadMaxPitch, cfg.HeadMaxPitch);
+                }
+                else if (cfg.HeadReturnSpeed > 0f)
+                {
+                    HeadYaw = Mathf.MoveTowards(HeadYaw, 0f, cfg.HeadReturnSpeed * dt);
+                    HeadPitch = Mathf.MoveTowards(HeadPitch, 0f, cfg.HeadReturnSpeed * dt);
+                }
+            }
+            HeadRotation = Quaternion.Euler(HeadPitch, HeadYaw, 0f);
+        }
+
+        // LB / RB side-step, hold B to duck. While held it overrides auto-dodge.
+        private void UpdateManualDodge(PluginConfig cfg, float dt)
+        {
+            if (!ManualDodgeHeld) return;
+            float x = (XInput.Held(XInput.RB) ? 1f : 0f) - (XInput.Held(XInput.LB) ? 1f : 0f);
+            float y = XInput.Held(XInput.B) ? cfg.DuckHeadHeight - cfg.StandingHeadHeight : 0f;
+            Vector3 target = new Vector3(x * cfg.MaxSideStep, y, 0f);
+            HeadOffset = Vector3.MoveTowards(HeadOffset, target, cfg.DodgeSpeed * dt);
+        }
+
         private void LateUpdate()
         {
             var cfg = PluginConfig.Instance;
@@ -126,7 +199,7 @@ namespace NonVRMod.Input
                 if (d == null) continue;
                 d.enabled = false; // reads XR devices directly; with no headset it would pin the camera to the origin
                 d.transform.localPosition = HeadPosition;
-                d.transform.localRotation = Quaternion.identity;
+                d.transform.localRotation = HeadRotation;
                 var cam = d.GetComponent<Camera>();
                 if (cam == null) continue;
                 // Same reset the game's own desktop mode (FirstPersonFlyingController) does.
@@ -134,15 +207,6 @@ namespace NonVRMod.Input
                 if (!Mathf.Approximately(cam.fieldOfView, cfg.FieldOfView)) { cam.fieldOfView = cfg.FieldOfView; cam.ResetAspect(); }
                 if (Cam == null) Cam = cam;
             }
-        }
-
-        // Saber points forward and tilts toward the direction of motion so the game's velocity-based cut check sees a swing.
-        private static Quaternion SwingRotation(Vector3 delta, Quaternion current, float dt)
-        {
-            Vector3 dir = Vector3.forward;
-            if (dt > 0f && delta.sqrMagnitude > 1e-6f)
-                dir = (Vector3.forward + Vector3.ClampMagnitude(delta / Mathf.Max(dt, 1e-3f), 6f) * 0.12f).normalized;
-            return Quaternion.Slerp(current, Quaternion.LookRotation(dir), 0.5f);
         }
     }
 }

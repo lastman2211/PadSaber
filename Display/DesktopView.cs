@@ -53,9 +53,39 @@ namespace NonVRMod.Display
 
             string dodge = PluginConfig.Instance.AutoDodge ? "ON" : "OFF";
             string text = XInput.Connected
-                ? $"L stick = left saber | R stick = right saber | menus: R stick = cursor, A/RT = click, L stick = scroll | Start = pause | Back = auto-dodge ({dodge}) | F9 hide"
+                ? $"Preset: {PoseProvider.PresetName} (Y) | Look: D-pad (stick click recenters) | Dodge: LB/RB/B | Auto-dodge {dodge} (Back) | Help: X | Hide: F9"
                 : "No gamepad detected. Plug in an Xbox-style controller (XInput).";
             GUI.Label(new Rect(10, 6, Screen.width - 20, 24), text, _label);
+
+            if (Time.unscaledTime < PoseProvider.PresetShownUntil)
+            {
+                var big = new GUIStyle(GUI.skin.label) { fontSize = 30, alignment = TextAnchor.MiddleCenter };
+                GUI.Label(new Rect(0, Screen.height * 0.12f, Screen.width, 50), $"Sensitivity: {PoseProvider.PresetName}", big);
+            }
+
+            if (PoseProvider.ShowHelp) DrawHelp();
+        }
+
+        private void DrawHelp()
+        {
+            var cfg = PluginConfig.Instance;
+            string text =
+                "CONTROLS (X closes this)\n\n" +
+                "Left / right stick      left / right saber (flick = swing)\n" +
+                "D-pad                   look around (yaw / pitch)\n" +
+                "L3 / R3 (stick click)   recenter view\n" +
+                "LB / RB                 side-step left / right\n" +
+                "B (hold)                duck\n" +
+                "A or RT / LT            click / triggers\n" +
+                "Y                       sensitivity preset (Soft / Normal / Fast)\n" +
+                "Back                    toggle auto-dodge\n" +
+                "Start                   pause\n" +
+                "F9                      hide on-screen hints\n\n" +
+                $"Preset: {PoseProvider.PresetName}    Auto-dodge: {(cfg.AutoDodge ? "ON" : "OFF")}\n" +
+                $"Head yaw {PoseProvider.HeadYaw:0}   pitch {PoseProvider.HeadPitch:0}";
+            var style = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, fontSize = 18, padding = new RectOffset(20, 20, 16, 16) };
+            float w = 640, h = 380;
+            GUI.Box(new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h), text, style);
         }
 
         private static void DrawHand(Camera cam, Vector3 pos, Quaternion rot, Color c)
