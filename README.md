@@ -2,7 +2,7 @@
 
 Play Beat Saber on a normal PC with an Xbox-style (XInput) gamepad. No headset or OpenXR runtime needed. Includes head look, manual and automatic dodging, aim assist toward the next block, and controller rumble.
 
-You need your own Steam copy of the game. This repo contains only the mod; no game files.
+You need your own copy of Beat Saber (Steam, Oculus/Meta Store or any other legitimate copy). This repo contains only the mod; no game files. It is an unofficial fan mod and is not affiliated with Beat Games or Meta.
 
 ## Supported game versions
 Only two versions are supported: **1.40.8** and **1.45.3**. The installer reads your game's version and installs the matching build, or stops with a message if your version is neither. On Steam you can pick a version under Properties > Betas.
@@ -73,3 +73,6 @@ Run it once per supported version, with that version installed (BSIPA must alrea
 
 ## If it doesn't work
 Open `Logs\_latest.log` in the game folder. Lines like `Patch target not found: X.Y` mean the game's class names differ from the version this build was made for; the patches are in `Patches/`. If the on-screen hint says no gamepad was detected, the controller must be XInput-compatible (Xbox layout) and connected before the game starts.
+
+## License
+MIT, see `LICENSE`. The mod loader (BSIPA) is downloaded by the installer from its official release and is not part of this repository.

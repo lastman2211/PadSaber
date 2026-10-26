@@ -3,3 +3,4 @@ obj/
 *.user
 .vs/
 install_path.txt
+release/
