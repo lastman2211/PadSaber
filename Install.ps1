@@ -2,8 +2,27 @@ param([string]$GameDir = "")
 
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$pathFile = Join-Path $here "install_path.txt"
+
+function Test-Game($p) { $p -and (Test-Path -LiteralPath (Join-Path $p "Beat Saber.exe")) }
+
+# Accepts what people paste or browse to: quotes, trailing slashes, the Beat Saber_Data folder, or its parent folder.
+function Resolve-Game($raw) {
+    if (-not $raw) { return $null }
+    $p = $raw.Trim().Trim('"').Trim("'").TrimEnd([char]92, [char]47)
+    if (-not $p) { return $null }
+    try {
+        $parent = Split-Path -Parent $p -ErrorAction Stop
+        foreach ($c in @($p, (Join-Path $p "Beat Saber"), $parent)) {
+            if ($c -and (Test-Game $c)) { return $c }
+        }
+    } catch { }   # not a usable path (e.g. a bare drive letter)
+    return $null
+}
 
 function Find-GameDir {
+    $cands = @()
+    # Steam: registry path, every library listed in libraryfolders.vdf, and the default location.
     $steam = (Get-ItemProperty "HKCU:\Software\Valve\Steam" -ErrorAction SilentlyContinue).SteamPath
     $libs = @()
     if ($steam) {
@@ -16,18 +35,56 @@ function Find-GameDir {
         }
     }
     $libs += "C:\Program Files (x86)\Steam"
-    foreach ($l in ($libs | Select-Object -Unique)) {
-        $p = Join-Path $l "steamapps\common\Beat Saber"
-        if (Test-Path (Join-Path $p "Beat Saber.exe")) { return $p }
+    foreach ($l in ($libs | Select-Object -Unique)) { $cands += (Join-Path $l "steamapps\common\Beat Saber") }
+    # Oculus / Meta Store and the folder remembered from the last install.
+    foreach ($d in (Get-PSDrive -PSProvider FileSystem).Root) {
+        $cands += (Join-Path $d "Program Files\Oculus\Software\Software\hyperbolic-magnetism-beat-saber")
+        $cands += (Join-Path $d "Oculus\Software\Software\hyperbolic-magnetism-beat-saber")
     }
+    if (Test-Path $pathFile) { $cands = @((Get-Content $pathFile -Raw).Trim()) + $cands }
+    foreach ($c in $cands) { if (Test-Game $c) { return $c } }
     return $null
 }
 
-if (-not $GameDir) { $GameDir = Find-GameDir }
-if (-not $GameDir -or -not (Test-Path (Join-Path $GameDir "Beat Saber.exe"))) {
-    Write-Host "Could not find Beat Saber. Run:  Install.bat `"D:\path\to\Beat Saber`"" -ForegroundColor Red
-    exit 1
+function Browse-Folder {
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        $d = New-Object System.Windows.Forms.FolderBrowserDialog
+        $d.Description = "Select your Beat Saber folder (the one that contains Beat Saber.exe)"
+        $d.ShowNewFolderButton = $false
+        if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { return $d.SelectedPath }
+    } catch { Write-Host "Could not open the folder picker; type the path instead." -ForegroundColor Yellow }
+    return $null
 }
+
+# Ask where the game is. Enter accepts the detected folder; otherwise paste a path or type B to browse.
+function Ask-GameDir($found) {
+    Write-Host ""
+    Write-Host "Where is Beat Saber installed? (the folder that contains Beat Saber.exe)"
+    if ($found) { Write-Host "  Detected: $found" -ForegroundColor Cyan }
+    while ($true) {
+        $prompt = if ($found) { "Press Enter to use the detected folder, paste a different path, or type B to browse" }
+                  else { "Paste the folder path, or type B to browse" }
+        $in = (Read-Host $prompt).Trim()
+        if (-not $in) {
+            if ($found) { return $found }
+            continue
+        }
+        $raw = if ($in -ieq "b") { Browse-Folder } else { $in }
+        if (-not $raw) { continue }   # picker cancelled
+        $g = Resolve-Game $raw
+        if ($g) { return $g }
+        Write-Host "Beat Saber.exe was not found in '$raw'. Try again." -ForegroundColor Red
+    }
+}
+
+if ($GameDir) {
+    $GameDir = Resolve-Game $GameDir   # scripted use: Install.bat "D:\path	o\Beat Saber" skips the question
+    if (-not $GameDir) { Write-Host "Beat Saber.exe was not found in the folder you gave." -ForegroundColor Red; exit 1 }
+} else {
+    $GameDir = Ask-GameDir (Find-GameDir)
+}
+$GameDir | Set-Content -Path $pathFile -Encoding ASCII   # remembered for next time and for Launch.bat
 Write-Host "Game folder: $GameDir"
 
 if (Get-Process -Name "Beat Saber" -ErrorAction SilentlyContinue) {
@@ -67,4 +124,4 @@ $plugins = Join-Path $GameDir "Plugins"
 New-Item -ItemType Directory -Path $plugins -Force | Out-Null
 Copy-Item (Join-Path $here "dist\NonVRMod.dll") $plugins -Force
 Write-Host ""
-Write-Host "Done. Start the game with Launch.bat (or Steam's Play button)." -ForegroundColor Green
+Write-Host "Done. Start the game with Launch.bat (or from Steam / your launcher as usual)." -ForegroundColor Green

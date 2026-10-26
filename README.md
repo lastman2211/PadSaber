@@ -5,10 +5,14 @@ Play Beat Saber **1.40.8** on a normal PC with an Xbox-style (XInput) gamepad. N
 You need your own Steam copy of the game. This repo contains only the mod; no game files.
 
 ## Install
-1. Install Beat Saber 1.40.8 from Steam and close it.
-2. Run `Install.bat`. It finds your game, installs the BSIPA mod loader if missing (downloaded from its official release), and copies the mod into `Plugins`.
-   If the game is not found, run `Install.bat "D:\path\to\Beat Saber"`.
-3. Plug in a controller and start the game with `Launch.bat` (or Steam's Play button). Do not use the `fpfc` launch option.
+1. Install Beat Saber 1.40.8 (Steam, Oculus/Meta Store or any other copy) and close it.
+2. Run `Install.bat`. It looks for your game (Steam libraries and Oculus folders) and asks where Beat Saber is:
+   - press **Enter** to use the folder it found,
+   - **paste** a folder path (quotes and a trailing `\` are fine), or
+   - type **B** to pick the folder in a window.
+   The folder must contain `Beat Saber.exe`. It then installs the BSIPA mod loader if missing (downloaded from its official release) and copies the mod into `Plugins`. Your choice is remembered for next time.
+   To skip the question: `Install.bat "D:\Games\Beat Saber"`.
+3. Plug in a controller and start the game with `Launch.bat` (it starts the folder you chose, or Steam if none was saved), or as usual from Steam / your launcher. Do not use the `fpfc` launch option.
 
 ## Controls
 Each stick sweeps its saber through an arc, so a flick is a swing and both hands move independently. When you let go, the saber returns to center slowly so the rebound does not cut anything.
