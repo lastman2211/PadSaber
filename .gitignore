@@ -4,3 +4,4 @@ obj/
 .vs/
 install_path.txt
 release/
+refs/

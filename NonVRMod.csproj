@@ -11,6 +11,10 @@
     <!-- Point this at YOUR legitimate Steam install: dotnet build -p:BeatSaberDir="D:\Steam\steamapps\common\Beat Saber" -->
     <BeatSaberDir Condition="'$(BeatSaberDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Beat Saber</BeatSaberDir>
     <Managed>$(BeatSaberDir)\Beat Saber_Data\Managed</Managed>
+    <HarmonyDll>$(BeatSaberDir)\Libs\0Harmony.dll</HarmonyDll>
+    <!-- Build.ps1 -FromRefs <version>: compile against the game files saved in refs\<version>\ instead of an installed game. -->
+    <Managed Condition="'$(RefsDir)' != ''">$(RefsDir)</Managed>
+    <HarmonyDll Condition="'$(RefsDir)' != ''">$(RefsDir)\0Harmony.dll</HarmonyDll>
     <!-- The mod is built once per supported game version. Build.ps1 passes -p:GameVersion=x.y.z (read from the game's
          globalgamemanagers, because BeatSaberVersion.txt is not refreshed by Steam updates); this is only a fallback. -->
     <GameVersionText Condition="'$(GameVersion)' == '' And Exists('$(BeatSaberDir)\BeatSaberVersion.txt')">$([System.IO.File]::ReadAllText('$(BeatSaberDir)\BeatSaberVersion.txt'))</GameVersionText>
@@ -23,7 +27,7 @@
 
   <ItemGroup>
     <Reference Include="IPA.Loader"><HintPath>$(Managed)\IPA.Loader.dll</HintPath><Private>false</Private></Reference>
-    <Reference Include="0Harmony"><HintPath>$(BeatSaberDir)\Libs\0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(HarmonyDll)</HintPath><Private>false</Private></Reference>
     <Reference Include="Main"><HintPath>$(Managed)\Main.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="BeatmapCore"><HintPath>$(Managed)\BeatmapCore.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="GameplayCore"><HintPath>$(Managed)\GameplayCore.dll</HintPath><Private>false</Private></Reference>
@@ -52,7 +56,7 @@
   </Target>
 
   <!-- Copies the built DLL into <BeatSaberDir>\Plugins when that folder exists. -->
-  <Target Name="DeployPlugin" AfterTargets="Build" Condition="Exists('$(BeatSaberDir)\Plugins')">
+  <Target Name="DeployPlugin" AfterTargets="Build" Condition="'$(RefsDir)' == '' And Exists('$(BeatSaberDir)\Plugins')">
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(BeatSaberDir)\Plugins" />
   </Target>
 
