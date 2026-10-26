@@ -39,6 +39,7 @@ namespace NonVRMod.Input
         public static Vector2 CursorN { get; private set; } = new Vector2(0.5f, 0.5f); // menu cursor, 0..1 screen coords
         public static bool ShowHelp { get; private set; }
         public static float PresetShownUntil { get; private set; }
+        public static float AimAssistShownUntil { get; private set; }
 
         /// <summary>True while a manual dodge button is held; AutoDodge stays out of the way.</summary>
         public static bool ManualDodgeHeld =>
@@ -49,6 +50,8 @@ namespace NonVRMod.Input
         private readonly List<TrackedPoseDriver> _drivers = new List<TrackedPoseDriver>();
         private float _nextFind;
         private Vector2 _sl, _sr; // smoothed stick values
+        private Vector2 _menuLook; // right stick, turns the view in menus
+        private bool _wasInGame;
 
         private void Awake() => Instance = this;
 
@@ -68,7 +71,8 @@ namespace NonVRMod.Input
                 InGame = FindObjectOfType<SaberManager>() != null;
             }
 
-            if (XInput.Down(XInput.Y))
+            bool aimCombo = XInput.LT > 0.5f && XInput.Down(XInput.Y);
+            if (XInput.Down(XInput.Y) && !aimCombo)
             {
                 cfg.Preset = (cfg.Preset + 1) % PresetNames.Length;
                 PresetShownUntil = Time.unscaledTime + 2f;
@@ -81,8 +85,15 @@ namespace NonVRMod.Input
             if (cfg.SwapSticks) { var t = ls; ls = rs; rs = t; var tt = lt; lt = rt; rt = tt; }
             if (cfg.InvertY) { ls.y = -ls.y; rs.y = -rs.y; }
 
+            if (aimCombo || UnityEngine.Input.GetKeyDown(KeyCode.F7))
+            {
+                cfg.AimAssistOn = !cfg.AimAssistOn;
+                AimAssistShownUntil = Time.unscaledTime + 2f;
+            }
+
+            _menuLook = InGame ? Vector2.zero : rs;
             if (InGame) ApplyGameplayPoses(cfg, ls, rs, dt);
-            else ApplyMenuPoses(cfg, rs, dt);
+            else ApplyMenuPoses(cfg, dt);
 
             UpdateHead(cfg, dt);
             UpdateManualDodge(cfg, dt);
@@ -105,8 +116,8 @@ namespace NonVRMod.Input
             Vector3 m = PresetMul[Mathf.Clamp(cfg.Preset, 0, PresetMul.Length - 1)];
             _sl = Follow(_sl, ls, cfg.FollowSpeed * m.y, cfg.ReturnSpeed * m.z, dt);
             _sr = Follow(_sr, rs, cfg.FollowSpeed * m.y, cfg.ReturnSpeed * m.z, dt);
-            Pose(cfg, m.x, -1f, _sl, out Vector3 pl, out Quaternion rl);
-            Pose(cfg, m.x, +1f, _sr, out Vector3 pr, out Quaternion rr);
+            Pose(cfg, m.x, -1f, 0, _sl, out Vector3 pl, out Quaternion rl);
+            Pose(cfg, m.x, +1f, 1, _sr, out Vector3 pr, out Quaternion rr);
             LeftPos = pl; LeftRot = rl; RightPos = pr; RightRot = rr;
         }
 
@@ -120,24 +131,25 @@ namespace NonVRMod.Input
 
         // Stick = where the saber points. The hand stays near its rest spot and pivots the saber, so a flick sweeps the
         // blade through an arc (like a wrist swing). Centered stick = saber pointing forward and slightly up.
-        private static void Pose(PluginConfig cfg, float angleMul, float side, Vector2 s, out Vector3 pos, out Quaternion rot)
+        private static void Pose(PluginConfig cfg, float angleMul, float side, int color, Vector2 s, out Vector3 pos, out Quaternion rot)
         {
             float cx = Curve(s.x, cfg.ResponseCurve), cy = Curve(s.y, cfg.ResponseCurve);
             float yaw = cx * cfg.MaxYaw * angleMul;
             float pitch = -cy * cfg.MaxPitch * angleMul + cfg.RestPitch; // stick up = saber tilts up (negative X euler = up)
-            rot = Quaternion.Euler(pitch, yaw, 0f);
             pos = new Vector3(side * cfg.HandSpread + cx * cfg.HandShift,
                               cfg.HandHeight + cy * cfg.HandShift,
                               cfg.HandDepth - cfg.HeadBack);
+            AimAssist.Apply(cfg, color, pos, new Vector2(cx, cy), cfg.MaxYaw * angleMul, cfg.MaxPitch * angleMul, cfg.RestPitch, ref yaw, ref pitch);
+            rot = Quaternion.Euler(pitch, yaw, 0f);
         }
 
         private static float Curve(float v, float exp) => Mathf.Sign(v) * Mathf.Pow(Mathf.Abs(v), Mathf.Max(0.5f, exp));
 
-        // Menus: park the left hand, move a cursor with the right stick, point the right laser through it.
-        private void ApplyMenuPoses(PluginConfig cfg, Vector2 rs, float dt)
+        // Menus: park the left hand and point the right laser through the center of the screen. The right stick turns the
+        // view (see UpdateHead), so the laser sweeps across the menu with it, like a crosshair.
+        private void ApplyMenuPoses(PluginConfig cfg, float dt)
         {
-            CursorN = new Vector2(Mathf.Clamp01(CursorN.x + rs.x * cfg.CursorSpeed * dt),
-                                  Mathf.Clamp01(CursorN.y + rs.y * cfg.CursorSpeed * dt));
+            CursorN = new Vector2(0.5f, 0.5f);
             Vector3 head = HeadPosition;
             LeftPos = head + new Vector3(-0.25f, -0.4f, 0.35f);
             RightPos = head + new Vector3(0.25f, -0.4f, 0.35f);
@@ -151,27 +163,30 @@ namespace NonVRMod.Input
 
         // ---- Head -----------------------------------------------------------------------------------------------
 
-        // D-pad looks around (in songs only; menus keep the view centered so the cursor stays aligned).
-        // Clicking either stick recenters.
+        // D-pad looks around; in menus the right stick does too. Clicking either stick recenters, and the view recenters
+        // when a song starts or ends.
         private void UpdateHead(PluginConfig cfg, float dt)
         {
             float dx = (XInput.Held(XInput.DRight) ? 1f : 0f) - (XInput.Held(XInput.DLeft) ? 1f : 0f);
             float dy = (XInput.Held(XInput.DUp) ? 1f : 0f) - (XInput.Held(XInput.DDown) ? 1f : 0f);
             if (cfg.InvertY) dy = -dy;
 
-            if (!InGame || XInput.Down(XInput.L3) || XInput.Down(XInput.R3))
+            bool changed = InGame != _wasInGame;
+            _wasInGame = InGame;
+            if (changed || XInput.Down(XInput.L3) || XInput.Down(XInput.R3))
             {
-                HeadYaw = Mathf.MoveTowards(HeadYaw, 0f, 400f * dt);
-                HeadPitch = Mathf.MoveTowards(HeadPitch, 0f, 400f * dt);
+                HeadYaw = 0f;
+                HeadPitch = 0f;
             }
             else
             {
-                if (dx != 0f || dy != 0f)
+                float mx = _menuLook.x, my = cfg.InvertY ? -_menuLook.y : _menuLook.y;
+                if (dx != 0f || dy != 0f || mx != 0f || my != 0f)
                 {
-                    HeadYaw = Mathf.Clamp(HeadYaw + dx * cfg.LookSpeed * dt, -cfg.HeadMaxYaw, cfg.HeadMaxYaw);
-                    HeadPitch = Mathf.Clamp(HeadPitch - dy * cfg.LookSpeed * dt, -cfg.HeadMaxPitch, cfg.HeadMaxPitch);
+                    HeadYaw = Mathf.Clamp(HeadYaw + dx * cfg.LookSpeed * dt + mx * cfg.MenuLookSpeed * dt, -cfg.HeadMaxYaw, cfg.HeadMaxYaw);
+                    HeadPitch = Mathf.Clamp(HeadPitch - dy * cfg.LookSpeed * dt - my * cfg.MenuLookSpeed * dt, -cfg.HeadMaxPitch, cfg.HeadMaxPitch);
                 }
-                else if (cfg.HeadReturnSpeed > 0f)
+                else if (InGame && cfg.HeadReturnSpeed > 0f)
                 {
                     HeadYaw = Mathf.MoveTowards(HeadYaw, 0f, cfg.HeadReturnSpeed * dt);
                     HeadPitch = Mathf.MoveTowards(HeadPitch, 0f, cfg.HeadReturnSpeed * dt);

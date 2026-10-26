@@ -44,16 +44,19 @@ namespace NonVRMod.Display
             }
             else if (!PoseProvider.InGame)
             {
-                // Menu cursor driven by the right stick.
-                var old = GUI.color;
-                GUI.color = new Color(1f, 1f, 1f, 0.95f);
-                Box(PoseProvider.CursorN.x * Screen.width, Screen.height - PoseProvider.CursorN.y * Screen.height, 12);
-                GUI.color = old;
+                // Menus: the right stick turns the view and the laser stays at screen center, so no pointer is drawn.
+                if (PluginConfig.Instance.MenuCrosshair)
+                {
+                    var old = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, 0.8f);
+                    Box(Screen.width / 2f, Screen.height / 2f, 5);
+                    GUI.color = old;
+                }
             }
 
             string dodge = PluginConfig.Instance.AutoDodge ? "ON" : "OFF";
             string text = XInput.Connected
-                ? $"Preset: {PoseProvider.PresetName} (Y) | Look: D-pad (stick click recenters) | Dodge: LB/RB/B | Auto-dodge {dodge} (Back) | Help: X | Hide: F9"
+                ? $"Preset: {PoseProvider.PresetName} (Y) | Look: D-pad (stick click recenters) | Dodge: LB/RB/B | Auto-dodge {dodge} (Back) | Aim assist {(PluginConfig.Instance.AimAssistOn ? "ON" : "OFF")} (LT+Y) | Help: X | Hide: F9"
                 : "No gamepad detected. Plug in an Xbox-style controller (XInput).";
             GUI.Label(new Rect(10, 6, Screen.width - 20, 24), text, _label);
 
@@ -61,6 +64,12 @@ namespace NonVRMod.Display
             {
                 var big = new GUIStyle(GUI.skin.label) { fontSize = 30, alignment = TextAnchor.MiddleCenter };
                 GUI.Label(new Rect(0, Screen.height * 0.12f, Screen.width, 50), $"Sensitivity: {PoseProvider.PresetName}", big);
+            }
+
+            if (Time.unscaledTime < PoseProvider.AimAssistShownUntil)
+            {
+                var big = new GUIStyle(GUI.skin.label) { fontSize = 30, alignment = TextAnchor.MiddleCenter };
+                GUI.Label(new Rect(0, Screen.height * 0.18f, Screen.width, 50), $"Aim assist: {(PluginConfig.Instance.AimAssistOn ? "ON" : "OFF")}", big);
             }
 
             if (PoseProvider.ShowHelp) DrawHelp();
@@ -84,7 +93,7 @@ namespace NonVRMod.Display
                 $"Preset: {PoseProvider.PresetName}    Auto-dodge: {(cfg.AutoDodge ? "ON" : "OFF")}\n" +
                 $"Head yaw {PoseProvider.HeadYaw:0}   pitch {PoseProvider.HeadPitch:0}";
             var style = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, fontSize = 18, padding = new RectOffset(20, 20, 16, 16) };
-            float w = 640, h = 380;
+            float w = 640, h = 440;
             GUI.Box(new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h), text, style);
         }
 

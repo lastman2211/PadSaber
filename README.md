@@ -1,6 +1,6 @@
 # BSnonvrmod
 
-Play Beat Saber **1.40.8** on a normal PC with an Xbox-style (XInput) gamepad. No headset or OpenXR runtime needed. Includes head look, manual and automatic dodging, and controller rumble.
+Play Beat Saber **1.40.8** on a normal PC with an Xbox-style (XInput) gamepad. No headset or OpenXR runtime needed. Includes head look, manual and automatic dodging, aim assist toward the next block, and controller rumble.
 
 You need your own Steam copy of the game. This repo contains only the mod; no game files.
 
@@ -21,10 +21,11 @@ Each stick sweeps its saber through an arc, so a flick is a swing and both hands
 | Side-step left / right | LB / RB |
 | Duck | Hold B |
 | Click / triggers | A or RT / LT |
-| Menu cursor | Right stick |
+| Menus: turn the view (the laser stays at screen center) | Right stick |
 | Scroll lists | Left stick |
 | Sensitivity preset (Soft / Normal / Fast) | Y |
 | Toggle auto-dodge | Back (or F8) |
+| Toggle aim assist | LT + Y (or F7) |
 | Controls panel | X |
 | Pause | Start |
 | Hide on-screen hints | F9 |
@@ -49,7 +50,9 @@ Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first r
 | `Rumble`, `RumbleStrength` | Controller vibration |
 | `ManualDodge` | LB/RB/B dodging on or off |
 | `AutoDodge`, `LookaheadMeters`, `MaxSideStep`, `DodgeSpeed` | Auto-dodge (offline play only) |
-| `CursorSpeed` | Menu cursor speed |
+| `MenuLookSpeed`, `MenuCrosshair` | How fast the right stick turns the view in menus; optional center dot |
+| `AimAssistOn`, `AimAssist`, `AimAssistRange` | Pull each saber toward the next block of its color while the stick is pushed that way (0 to 1, meters ahead) |
+| `DebugLog` | Log auto-dodge walls and aim-assist targets to `Logs\_latest.log` |
 
 ## Build from source
 ```

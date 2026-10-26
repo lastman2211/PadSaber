@@ -17,6 +17,7 @@ namespace NonVRMod
         public virtual float MaxSideStep { get; set; } = 1.3f;
         public virtual float DodgeSpeed { get; set; } = 6f;
         public virtual bool ManualDodge { get; set; } = true;       // LB/RB side-step, hold B to duck
+        public virtual bool DebugLog { get; set; } = false;         // verbose auto-dodge / aim-assist logging
 
         // Display
         public virtual bool Fullscreen { get; set; } = true;
@@ -28,6 +29,8 @@ namespace NonVRMod
         public virtual float LookSpeed { get; set; } = 90f;         // degrees per second
         public virtual float HeadMaxYaw { get; set; } = 60f;
         public virtual float HeadMaxPitch { get; set; } = 40f;
+        public virtual float MenuLookSpeed { get; set; } = 110f;    // degrees per second the right stick turns the view in menus
+        public virtual bool MenuCrosshair { get; set; } = false;    // tiny dot at the center of the screen in menus
         public virtual float HeadReturnSpeed { get; set; } = 0f;    // >0: view drifts back to center when D-pad is released
 
         // Gamepad controls
@@ -36,6 +39,9 @@ namespace NonVRMod
         public virtual float StickDeadzone { get; set; } = 0.18f;
         public virtual float ResponseCurve { get; set; } = 1.2f;    // 1 = linear, higher = finer control near center
         public virtual int Preset { get; set; } = 1;                // 0 Soft, 1 Normal, 2 Fast (Y cycles)
+        public virtual bool AimAssistOn { get; set; } = true;       // pull a saber toward the nearest block of its color
+        public virtual float AimAssist { get; set; } = 0.6f;        // 0..1 how strongly
+        public virtual float AimAssistRange { get; set; } = 10f;    // meters ahead to look for blocks
         public virtual bool Rumble { get; set; } = true;
         public virtual float RumbleStrength { get; set; } = 1f;
 
@@ -48,7 +54,6 @@ namespace NonVRMod
         public virtual float HandHeight { get; set; } = 1.2f;       // resting hand height
         public virtual float HandSpread { get; set; } = 0.25f;      // resting distance of each hand from the center line
         public virtual float HandDepth { get; set; } = 0.7f;        // how far in front of the head the sabers sit
-        public virtual float CursorSpeed { get; set; } = 0.9f;      // menu cursor speed (screens per second)
 
         public virtual void OnReload() { }
         public virtual void CopyFrom(PluginConfig other) { }
