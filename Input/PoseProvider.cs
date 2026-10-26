@@ -41,6 +41,9 @@ namespace NonVRMod.Input
         public static float PresetShownUntil { get; private set; }
         public static float AimAssistShownUntil { get; private set; }
 
+        /// <summary>True while B is held: the player is ducking by hand and auto-duck stays out of the way.</summary>
+        public static bool ManualDuckHeld => PluginConfig.Instance.ManualDodge && XInput.Held(XInput.B);
+
         /// <summary>True while LB/RB is held; AutoDodge stays out of the way of the side-step. B (duck) does not count:
         /// height is the player's, the side-step stays automatic.</summary>
         public static bool ManualSideHeld =>
@@ -207,11 +210,12 @@ namespace NonVRMod.Input
             HeadRotation = Quaternion.Euler(HeadPitch, HeadYaw, 0f);
         }
 
-        // LB / RB side-step (overrides auto-dodge while held). Hold B to duck; the height is always the player's.
+        // Hold B to duck by hand (overrides auto-duck while held; AutoDodge owns the height otherwise).
+        // LB / RB side-step by hand (overrides the automatic side-step while held).
         private void UpdateManualDodge(PluginConfig cfg, float dt)
         {
-            float duck = cfg.ManualDodge && XInput.Held(XInput.B) ? cfg.DuckHeadHeight - cfg.StandingHeadHeight : 0f;
-            HeadOffset.y = Mathf.MoveTowards(HeadOffset.y, duck, cfg.DodgeSpeed * dt);
+            if (ManualDuckHeld)
+                HeadOffset.y = Mathf.MoveTowards(HeadOffset.y, cfg.DuckHeadHeight - cfg.StandingHeadHeight, cfg.DodgeSpeed * dt);
             if (!ManualSideHeld) return;
             float x = (XInput.Held(XInput.RB) ? 1f : 0f) - (XInput.Held(XInput.LB) ? 1f : 0f);
             HeadOffset.x = Mathf.MoveTowards(HeadOffset.x, x * cfg.MaxSideStep, cfg.DodgeSpeed * dt);

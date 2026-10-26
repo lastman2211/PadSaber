@@ -23,7 +23,7 @@ Each stick sweeps its saber through an arc, so a flick is a swing and both hands
 | Look around (head yaw / pitch) | D-pad |
 | Recenter view | Click either stick (L3 / R3) |
 | Side-step left / right | LB / RB |
-| Duck (always manual) | Hold B |
+| Duck by hand (auto-dodge also ducks) | Hold B |
 | Click / triggers | A or RT / LT |
 | Menus: turn the view (the laser stays at screen center) | Right stick |
 | Scroll lists | Left stick |
@@ -34,7 +34,7 @@ Each stick sweeps its saber through an arc, so a flick is a swing and both hands
 | Pause | Start |
 | Hide on-screen hints | F9 |
 
-In menus the right stick turns the view and the laser stays at screen center. Sabers stay in place when you look around, as they would in VR. Auto-dodge only steps sideways; ducking is always yours (hold B), and auto-dodge still side-steps while you duck. LB/RB override the automatic side-step while held. Rumble follows the game's own haptics (cuts and so on).
+In menus the right stick turns the view and the laser stays at screen center. Sabers stay in place when you look around, as they would in VR. Auto-dodge steps sideways and ducks under low walls by itself. Hold B to duck by hand and LB/RB to side-step by hand; whichever axis you control, the other stays automatic. Rumble follows the game's own haptics (cuts and so on).
 
 ## Tuning
 Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first run) and restart the game.
@@ -54,6 +54,7 @@ Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first r
 | `FieldOfView`, `HeadBack`, `Fullscreen` | The view |
 | `Rumble`, `RumbleStrength` | Controller vibration |
 | `ManualDodge` | LB/RB/B dodging on or off |
+| `AutoDuck`, `AutoDuckMinHeight` | Auto-dodge also lowers the view under low walls, down to this height (meters) |
 | `AutoDodge`, `LookaheadMeters`, `MaxSideStep`, `DodgeSpeed` | Auto-dodge (offline play only) |
 | `MenuLookSpeed`, `MenuCrosshair` | How fast the right stick turns the view in menus; optional center dot |
 | `AimAssistOn`, `AimAssist`, `AimAssistRange` | Pull each saber toward the next block of its color while the stick is pushed that way (0 to 1, meters ahead) |

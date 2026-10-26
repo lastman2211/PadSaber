@@ -5,7 +5,7 @@ using UnityEngine;
 namespace NonVRMod.Dodge
 {
     /// <summary>
-    /// Moves the fake head out of walls. Polls ObstacleControllers ~15x/s, finds the nearest
+    /// Moves the fake head out of walls (side-step and duck). Polls ObstacleControllers ~15x/s, finds the nearest
     /// side-step / duck pose that clears every wall inside the lookahead distance, and eases toward it.
     /// Uses renderer world bounds so it does not depend on obstacle internals.
     /// </summary>
@@ -15,6 +15,7 @@ namespace NonVRMod.Dodge
         private const float PollInterval = 0.066f;
 
         private readonly List<Bounds> _threats = new List<Bounds>();
+        private readonly List<float> _heights = new List<float>();
         private Vector3 _target;
         private float _nextPoll, _nextLog;
 
@@ -27,8 +28,6 @@ namespace NonVRMod.Dodge
                 Plugin.Log.Info($"Auto-dodge {(cfg.AutoDodge ? "ON" : "OFF")}");
             }
 
-            if (PoseProvider.ManualSideHeld) return; // LB/RB is overriding the side-step (B only ducks; it does not block this)
-
             if (!cfg.AutoDodge) _target = Vector3.zero;
             else if (Time.unscaledTime >= _nextPoll)
             {
@@ -36,8 +35,10 @@ namespace NonVRMod.Dodge
                 _target = Solve(cfg);
             }
 
-            // Auto-dodge only owns the side-step. Height belongs to the player (hold B), see PoseProvider.UpdateManualDodge.
-            PoseProvider.HeadOffset.x = Mathf.MoveTowards(PoseProvider.HeadOffset.x, _target.x, cfg.DodgeSpeed * Time.unscaledDeltaTime);
+            // x is skipped while LB/RB is held and y while B is held (the player is in charge of that axis).
+            float step = cfg.DodgeSpeed * Time.unscaledDeltaTime;
+            if (!PoseProvider.ManualSideHeld) PoseProvider.HeadOffset.x = Mathf.MoveTowards(PoseProvider.HeadOffset.x, _target.x, step);
+            if (!PoseProvider.ManualDuckHeld) PoseProvider.HeadOffset.y = Mathf.MoveTowards(PoseProvider.HeadOffset.y, cfg.AutoDuck ? _target.y : 0f, step);
         }
 
         private Vector3 Solve(PluginConfig cfg)
@@ -58,16 +59,30 @@ namespace NonVRMod.Dodge
             }
             if (_threats.Count == 0) return Vector3.zero;
 
-            // Evaluate at the player's current height, so a manual duck (B) under a ceiling wall counts as clear.
-            float headY = cfg.StandingHeadHeight + PoseProvider.HeadOffset.y;
+            // Heights to try: standing, then lower in 10 cm steps down to AutoDuckMinHeight. While B is held the player is
+            // ducking by hand, so only that height is tried (the side-step still adapts to it).
+            float stand = cfg.StandingHeadHeight;
+            _heights.Clear();
+            if (PoseProvider.ManualDuckHeld) _heights.Add(stand + PoseProvider.HeadOffset.y);
+            else
+            {
+                _heights.Add(stand);
+                if (cfg.AutoDuck)
+                    for (float h = stand - 0.1f; h >= cfg.AutoDuckMinHeight - 1e-4f; h -= 0.1f) _heights.Add(h);
+            }
+
             Vector3 best = Vector3.zero;
             float bestCost = float.MaxValue;
             for (float x = -cfg.MaxSideStep; x <= cfg.MaxSideStep + 1e-4f; x += 0.1f)
             {
-                int hits = CountHits(x, headY);
-                // Fewest walls first (none when possible), then small moves, and avoid flipping sides.
-                float cost = hits * 100f + Mathf.Abs(x) + Mathf.Abs(x - PoseProvider.HeadOffset.x) * 0.25f;
-                if (cost < bestCost) { bestCost = cost; best = new Vector3(x, 0f, 0f); }
+                foreach (float h in _heights)
+                {
+                    int hits = CountHits(x, h);
+                    // Fewest walls first (none when possible; if nothing clears, the least-bad pose rather than freezing),
+                    // then small moves. Ducking costs a little more than stepping, and flipping sides is discouraged.
+                    float cost = hits * 100f + Mathf.Abs(x) + (stand - h) * 1.2f + Mathf.Abs(x - PoseProvider.HeadOffset.x) * 0.25f;
+                    if (cost < bestCost) { bestCost = cost; best = new Vector3(x, h - stand, 0f); }
+                }
             }
             return best;
         }
