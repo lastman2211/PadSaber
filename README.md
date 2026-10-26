@@ -74,5 +74,14 @@ Run it once per supported version, with that version installed (BSIPA must alrea
 ## If it doesn't work
 Open `Logs\_latest.log` in the game folder. Lines like `Patch target not found: X.Y` mean the game's class names differ from the version this build was made for; the patches are in `Patches/`. If the on-screen hint says no gamepad was detected, the controller must be XInput-compatible (Xbox layout) and connected before the game starts.
 
+## Support
+The mod is free and always will be. If you like it and want to say thanks, donations are welcome but never expected.
+
+| Coin | Network | Address |
+|---|---|---|
+| ETH | Ethereum (mainnet) | `0xFaEB18c7E0cb581dF7A0E1069c9c9Bec48c2B28D` |
+
+Send only ETH (or ERC-20 tokens such as USDT/USDC) on the Ethereum network to this address. Do not send Bitcoin or coins from other networks, because they will be lost. Check the address in this README on the official repository before sending.
+
 ## License
 MIT, see `LICENSE`. The mod loader (BSIPA) is downloaded by the installer from its official release and is not part of this repository.
