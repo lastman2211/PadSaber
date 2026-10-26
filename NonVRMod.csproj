@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <AssemblyName>NonVRMod</AssemblyName>
+    <RootNamespace>NonVRMod</RootNamespace>
+    <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Point this at YOUR legitimate Steam install: dotnet build -p:BeatSaberDir="D:\Steam\steamapps\common\Beat Saber" -->
+    <BeatSaberDir Condition="'$(BeatSaberDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Beat Saber</BeatSaberDir>
+    <Managed>$(BeatSaberDir)\Beat Saber_Data\Managed</Managed>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="IPA.Loader"><HintPath>$(Managed)\IPA.Loader.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(BeatSaberDir)\Libs\0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Main"><HintPath>$(Managed)\Main.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BeatmapCore"><HintPath>$(Managed)\BeatmapCore.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="GameplayCore"><HintPath>$(Managed)\GameplayCore.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="HMLib"><HintPath>$(Managed)\HMLib.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(Managed)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(Managed)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>$(Managed)\UnityEngine.InputLegacyModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.PhysicsModule"><HintPath>$(Managed)\UnityEngine.PhysicsModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(Managed)\UnityEngine.IMGUIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.XRModule"><HintPath>$(Managed)\UnityEngine.XRModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.SpatialTracking"><HintPath>$(Managed)\UnityEngine.SpatialTracking.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.XR.OpenXR"><HintPath>$(Managed)\Unity.XR.OpenXR.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.XR.Management"><HintPath>$(Managed)\Unity.XR.Management.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="manifest.json" />
+  </ItemGroup>
+
+  <!-- Copies the built DLL into <BeatSaberDir>\Plugins when that folder exists. -->
+  <Target Name="DeployPlugin" AfterTargets="Build" Condition="Exists('$(BeatSaberDir)\Plugins')">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(BeatSaberDir)\Plugins" />
+  </Target>
+
+</Project>

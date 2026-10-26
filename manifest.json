@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/bsmg/BSIPA-MetadataFileSchema/master/Schema.json",
+  "author": "you",
+  "description": "Play Beat Saber without VR: mouse/keyboard or gamepad, OpenXR bypass, optional auto-dodge.",
+  "gameVersion": "1.40.8",
+  "id": "NonVRMod",
+  "name": "NonVRMod",
+  "version": "0.1.0",
+  "dependsOn": {
+    "BSIPA": "^4.3.0"
+  }
+}
