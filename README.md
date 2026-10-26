@@ -1,6 +1,10 @@
-# BSnonvrmod
+<p align="center"><img src="assets/banner.png" alt="PadSaber: play Beat Saber without VR" width="100%"></p>
+
+# PadSaber
 
 Play Beat Saber on a normal PC with an Xbox-style (XInput) gamepad. No headset or OpenXR runtime needed. Includes head look, manual and automatic dodging, aim assist toward the next block, and controller rumble.
+
+*(Under the hood the plugin is still called `NonVRMod`, so you'll see that name in file names, the settings file and logs.)*
 
 **New here? Follow the step-by-step guide: [TUTORIAL.md](TUTORIAL.md).**
 

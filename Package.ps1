@@ -1,4 +1,4 @@
-# Developer tool: packs everything a player needs into release\BSnonvrmod-<version>.zip.
+# Developer tool: packs everything a player needs into release\PadSaber-<version>.zip.
 # Refuses to pack if a build in dist\ is older than the source (a stale DLL would ship old bugs).
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -19,16 +19,18 @@ foreach ($b in $builds) {
     }
 }
 
-$stage = Join-Path $env:TEMP "bsnonvrmod_pack"
+$stage = Join-Path $env:TEMP "padsaber_pack"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
-$root = Join-Path $stage "BSnonvrmod"
+$root = Join-Path $stage "PadSaber"
 New-Item -ItemType Directory -Path $root | Out-Null
 foreach ($f in "Install.bat", "Install.ps1", "GameVersion.ps1", "Launch.bat", "README.md", "TUTORIAL.md", "LICENSE") { Copy-Item (Join-Path $here $f) $root }
 Copy-Item (Join-Path $here "dist") $root -Recurse
+New-Item -ItemType Directory -Path (Join-Path $root "assets") | Out-Null
+Copy-Item (Join-Path $here "assets\banner.png") (Join-Path $root "assets")   # the README shows it
 
 $outDir = Join-Path $here "release"
 New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-$zip = Join-Path $outDir "BSnonvrmod-$version.zip"
+$zip = Join-Path $outDir "PadSaber-$version.zip"
 if (Test-Path $zip) { Remove-Item $zip }
 # Compress-Archive in Windows PowerShell 5.1 writes backslash paths, which break some extractors. Write '/' paths instead.
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem

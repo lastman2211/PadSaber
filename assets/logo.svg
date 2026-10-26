@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171232"/>
+      <stop offset="1" stop-color="#2d1560"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.45" r="0.55">
+      <stop offset="0" stop-color="#7a4dff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#7a4dff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="red" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ff2d55"/>
+      <stop offset="1" stop-color="#ff9aa8"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#1e8bff"/>
+      <stop offset="1" stop-color="#9fd2ff"/>
+    </linearGradient>
+    <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b3f5c"/>
+      <stop offset="1" stop-color="#1f2238"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-30%" width="220%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#halo)"/>
+
+  <!-- sabers: rise out of the two sticks -->
+  <g transform="translate(190 352) rotate(-20)" filter="url(#glow)">
+    <rect x="-13" y="-262" width="26" height="262" rx="13" fill="url(#red)"/>
+    <rect x="-5" y="-250" width="10" height="240" rx="5" fill="#fff" opacity="0.9"/>
+  </g>
+  <g transform="translate(322 352) rotate(20)" filter="url(#glow)">
+    <rect x="-13" y="-262" width="26" height="262" rx="13" fill="url(#blue)"/>
+    <rect x="-5" y="-250" width="10" height="240" rx="5" fill="#fff" opacity="0.9"/>
+  </g>
+
+  <!-- gamepad -->
+  <path d="M120 338 C120 304 150 292 184 292 L328 292 C362 292 392 304 392 338 C402 388 410 440 378 450 C352 458 336 428 320 408 L192 408 C176 428 160 458 134 450 C102 440 110 388 120 338 Z"
+        fill="url(#pad)" stroke="#8b90b8" stroke-width="5" stroke-linejoin="round"/>
+  <!-- sticks -->
+  <circle cx="190" cy="352" r="34" fill="#12142a" stroke="#8b90b8" stroke-width="4"/>
+  <circle cx="190" cy="352" r="19" fill="#ff2d55"/>
+  <circle cx="322" cy="352" r="34" fill="#12142a" stroke="#8b90b8" stroke-width="4"/>
+  <circle cx="322" cy="352" r="19" fill="#1e8bff"/>
+  <!-- centre button + small details -->
+  <circle cx="256" cy="330" r="9" fill="#8b90b8"/>
+  <rect x="236" y="368" width="40" height="8" rx="4" fill="#5a5f86"/>
+</svg>

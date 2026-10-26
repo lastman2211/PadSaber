@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#120e28"/>
+      <stop offset="1" stop-color="#2a1458"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.27" cy="0.5" r="0.45">
+      <stop offset="0" stop-color="#7a4dff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#7a4dff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff5f7e"/>
+      <stop offset="0.5" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#5fb4ff"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ff2d55"/>
+      <stop offset="1" stop-color="#ff9aa8"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#1e8bff"/>
+      <stop offset="1" stop-color="#9fd2ff"/>
+    </linearGradient>
+    <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b3f5c"/>
+      <stop offset="1" stop-color="#1f2238"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-30%" width="220%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#halo)"/>
+
+  <!-- faint note-lane lines for depth -->
+  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="2">
+    <path d="M640 640 L470 0"/><path d="M700 640 L610 0"/><path d="M760 640 L750 0"/>
+    <path d="M820 640 L890 0"/><path d="M880 640 L1030 0"/>
+  </g>
+
+  <!-- icon, scaled -->
+  <g transform="translate(70 70) scale(1.0)">
+    <rect width="500" height="500" rx="110" fill="#ffffff" fill-opacity="0.04"/>
+    <g transform="translate(-6 -6) scale(1.023)">
+      <g transform="translate(190 352) rotate(-20)" filter="url(#glow)">
+        <rect x="-13" y="-262" width="26" height="262" rx="13" fill="url(#red)"/>
+        <rect x="-5" y="-250" width="10" height="240" rx="5" fill="#fff" opacity="0.9"/>
+      </g>
+      <g transform="translate(322 352) rotate(20)" filter="url(#glow)">
+        <rect x="-13" y="-262" width="26" height="262" rx="13" fill="url(#blue)"/>
+        <rect x="-5" y="-250" width="10" height="240" rx="5" fill="#fff" opacity="0.9"/>
+      </g>
+      <path d="M120 338 C120 304 150 292 184 292 L328 292 C362 292 392 304 392 338 C402 388 410 440 378 450 C352 458 336 428 320 408 L192 408 C176 428 160 458 134 450 C102 440 110 388 120 338 Z"
+            fill="url(#pad)" stroke="#8b90b8" stroke-width="5" stroke-linejoin="round"/>
+      <circle cx="190" cy="352" r="34" fill="#12142a" stroke="#8b90b8" stroke-width="4"/>
+      <circle cx="190" cy="352" r="19" fill="#ff2d55"/>
+      <circle cx="322" cy="352" r="34" fill="#12142a" stroke="#8b90b8" stroke-width="4"/>
+      <circle cx="322" cy="352" r="19" fill="#1e8bff"/>
+      <circle cx="256" cy="330" r="9" fill="#8b90b8"/>
+      <rect x="236" y="368" width="40" height="8" rx="4" fill="#5a5f86"/>
+    </g>
+  </g>
+
+  <!-- text -->
+  <text x="636" y="296" font-family="Segoe UI, Arial, sans-serif" font-size="108" font-weight="800" fill="url(#word)">PadSaber</text>
+  <text x="646" y="365" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="500" fill="#e8e6ff">Play Beat Saber without VR</text>
+  <text x="646" y="425" font-family="Segoe UI, Arial, sans-serif" font-size="30" fill="#a9a4d8">Gamepad  •  Auto-dodge  •  Aim assist</text>
+  <text x="646" y="475" font-family="Segoe UI, Arial, sans-serif" font-size="26" fill="#7f7ab4">Free and open source  •  Beat Saber 1.40.8 &amp; 1.45.3</text>
+</svg>

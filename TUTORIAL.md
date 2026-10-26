@@ -1,4 +1,4 @@
-# How to play Beat Saber without VR (step by step)
+# PadSaber: how to play Beat Saber without VR (step by step)
 
 This takes about 5 minutes. You need **Beat Saber on Windows** and an **Xbox-style gamepad** (an Xbox controller, or any controller that works as "XInput").
 
@@ -11,7 +11,7 @@ The mod works with two Beat Saber versions: **1.40.8** and **1.45.3**.
 Close Beat Saber before the next step.
 
 ## 2. Download and unzip the mod
-1. Go to the **Releases** page of this project and download `BSnonvrmod-0.9.0.zip`.
+1. Go to the **Releases** page of this project and download `PadSaber-0.9.0.zip`.
 2. Right-click the zip > **Extract All**. Put the folder anywhere, for example your Desktop.
 
 ## 3. Install it
