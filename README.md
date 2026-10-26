@@ -2,6 +2,8 @@
 
 Play Beat Saber on a normal PC with an Xbox-style (XInput) gamepad. No headset or OpenXR runtime needed. Includes head look, manual and automatic dodging, aim assist toward the next block, and controller rumble.
 
+**New here? Follow the step-by-step guide: [TUTORIAL.md](TUTORIAL.md).**
+
 You need your own copy of Beat Saber (Steam, Oculus/Meta Store or any other legitimate copy). This repo contains only the mod; no game files. It is an unofficial fan mod and is not affiliated with Beat Games or Meta.
 
 ## Supported game versions

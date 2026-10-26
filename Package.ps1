@@ -23,7 +23,7 @@ $stage = Join-Path $env:TEMP "bsnonvrmod_pack"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 $root = Join-Path $stage "BSnonvrmod"
 New-Item -ItemType Directory -Path $root | Out-Null
-foreach ($f in "Install.bat", "Install.ps1", "GameVersion.ps1", "Launch.bat", "README.md", "LICENSE") { Copy-Item (Join-Path $here $f) $root }
+foreach ($f in "Install.bat", "Install.ps1", "GameVersion.ps1", "Launch.bat", "README.md", "TUTORIAL.md", "LICENSE") { Copy-Item (Join-Path $here $f) $root }
 Copy-Item (Join-Path $here "dist") $root -Recurse
 
 $outDir = Join-Path $here "release"
