@@ -32,9 +32,30 @@ namespace NonVRMod.Patches
                 PatchUtil.Patch(h, t, "get_hasInputFocus", typeof(PosePatches), prefix: nameof(True));
                 PatchUtil.Patch(h, t, "get_hasVrFocus", typeof(PosePatches), prefix: nameof(True));
             }
+            ApplySystemState(h);
             // UnityXRHelper.Start needs a live XRInputSubsystem (list[0]) and would throw without a runtime.
             PatchUtil.Patch(h, "UnityXRHelper", "Start", typeof(PosePatches), prefix: nameof(Skip));
             PatchUtil.Patch(h, "UnityXRHelper", "OnDestroy", typeof(PosePatches), prefix: nameof(Skip));
+        }
+
+        /// <summary>
+        /// Beat Saber 1.45+ keeps input focus / headset presence in IXRSystemState (UnityXRSystemState, or MockXRSystemState
+        /// without a runtime) instead of the platform helper. DeactivateVRControllersOnFocusCapture hides the controllers
+        /// (sabers, menu laser) unless hasInputFocus is true, and UnityXRSystemState.Update would keep reporting "no focus"
+        /// and "no user present" without an OpenXR session. These classes do not exist in 1.40.8, so they are optional.
+        /// </summary>
+        private static void ApplySystemState(Harmony h)
+        {
+            foreach (var t in new[] { "UnityXRSystemState", "MockXRSystemState" })
+            {
+                PatchUtil.Patch(h, t, "get_hasInputFocus", typeof(PosePatches), prefix: nameof(True), optionalType: true);
+                PatchUtil.Patch(h, t, "get_hasVrFocus", typeof(PosePatches), prefix: nameof(True), optionalType: true);
+                PatchUtil.Patch(h, t, "get_hasHmdMounted", typeof(PosePatches), prefix: nameof(True), optionalType: true);
+                PatchUtil.Patch(h, t, "IsAppFocusCurrentlyLost", typeof(PosePatches), prefix: nameof(False), optionalType: true);
+            }
+            // Stop the real state machine from reading OpenXR and firing focus-lost / unmounted events (which would pause songs).
+            foreach (var m in new[] { "Update", "Start", "UpdateUserPresence", "SetUserPresence", "SetInputFocus", "OnApplicationPause" })
+                PatchUtil.Patch(h, "UnityXRSystemState", m, typeof(PosePatches), prefix: nameof(Skip), optionalType: true);
         }
 
         private static bool NodePose(XRNode nodeType, ref Vector3 pos, ref Quaternion rot, ref bool __result)

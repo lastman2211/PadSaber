@@ -14,9 +14,10 @@ namespace NonVRMod.Patches
                 .FirstOrDefault(t => t.Name == name);
 
         /// <summary>Patches Type.method with a static method from patchType. Logs and skips if the target is missing.</summary>
-        public static void Patch(Harmony h, string typeName, string method, Type patchType, string prefix = null, string postfix = null)
+        public static void Patch(Harmony h, string typeName, string method, Type patchType, string prefix = null, string postfix = null, bool optionalType = false)
         {
             var type = FindType(typeName);
+            if (type == null && optionalType) return; // class only exists in some game versions (e.g. UnityXRSystemState, 1.45+)
             var targets = type?.GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                 .Where(m => m.Name == method).ToList();
             if (targets == null || targets.Count == 0)

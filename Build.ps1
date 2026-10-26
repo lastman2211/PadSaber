@@ -6,15 +6,14 @@ param([string]$GameDir = "C:\Program Files (x86)\Steam\steamapps\common\Beat Sab
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-$verFile = Join-Path $GameDir "BeatSaberVersion.txt"
-if (-not (Test-Path $verFile)) { throw "No BeatSaberVersion.txt in '$GameDir'. Is that the Beat Saber folder?" }
-$ver = [regex]::Match((Get-Content $verFile -Raw), '^\d+\.\d+\.\d+').Value
-if (-not $ver) { throw "Could not read the game version from $verFile" }
+. (Join-Path $here "GameVersion.ps1")
+$ver = Get-GameVersion $GameDir
+if (-not $ver) { throw "Could not read the game version from '$GameDir'. Is that the Beat Saber folder?" }
 
 Write-Host "Building for Beat Saber $ver ..."
 Push-Location $here
 try {
-    dotnet build -c Release "-p:BeatSaberDir=$GameDir"
+    dotnet build -c Release "-p:BeatSaberDir=$GameDir" "-p:GameVersion=$ver"
     if ($LASTEXITCODE -ne 0) { throw "Build failed." }
     $out = Join-Path $here "dist\$ver"
     New-Item -ItemType Directory -Path $out -Force | Out-Null

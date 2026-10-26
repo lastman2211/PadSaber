@@ -7,6 +7,8 @@ You need your own Steam copy of the game. This repo contains only the mod; no ga
 ## Supported game versions
 Only two versions are supported: **1.40.8** and **1.45.3**. The installer reads your game's version and installs the matching build, or stops with a message if your version is neither. On Steam you can pick a version under Properties > Betas.
 
+If you change game versions after the mod loader (BSIPA) was installed, start the game once and close it before running `Install.bat`: on the first start after a version change BSIPA moves everything in `Plugins` to an `Old <version> Plugins` folder. The installer tells you when this applies.
+
 ## Install
 1. Install a supported Beat Saber version (Steam, Oculus/Meta Store or any other copy) and close it.
 2. Run `Install.bat`. It looks for your game (Steam libraries and Oculus folders) and asks where Beat Saber is:

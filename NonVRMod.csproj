@@ -11,9 +11,10 @@
     <!-- Point this at YOUR legitimate Steam install: dotnet build -p:BeatSaberDir="D:\Steam\steamapps\common\Beat Saber" -->
     <BeatSaberDir Condition="'$(BeatSaberDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Beat Saber</BeatSaberDir>
     <Managed>$(BeatSaberDir)\Beat Saber_Data\Managed</Managed>
-    <!-- The mod is built once per supported game version; the version (e.g. 1.40.8) is read from the install. -->
-    <GameVersionText Condition="Exists('$(BeatSaberDir)\BeatSaberVersion.txt')">$([System.IO.File]::ReadAllText('$(BeatSaberDir)\BeatSaberVersion.txt'))</GameVersionText>
-    <GameVersion>$([System.Text.RegularExpressions.Regex]::Match('$(GameVersionText)', '^\d+\.\d+\.\d+').Value)</GameVersion>
+    <!-- The mod is built once per supported game version. Build.ps1 passes -p:GameVersion=x.y.z (read from the game's
+         globalgamemanagers, because BeatSaberVersion.txt is not refreshed by Steam updates); this is only a fallback. -->
+    <GameVersionText Condition="'$(GameVersion)' == '' And Exists('$(BeatSaberDir)\BeatSaberVersion.txt')">$([System.IO.File]::ReadAllText('$(BeatSaberDir)\BeatSaberVersion.txt'))</GameVersionText>
+    <GameVersion Condition="'$(GameVersion)' == ''">$([System.Text.RegularExpressions.Regex]::Match('$(GameVersionText)', '^\d+\.\d+\.\d+').Value)</GameVersion>
   </PropertyGroup>
 
   <ItemGroup>

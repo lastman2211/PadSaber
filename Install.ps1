@@ -95,10 +95,10 @@ if (Get-Process -Name "Beat Saber" -ErrorAction SilentlyContinue) {
 # One build of the mod per supported game version: dist\<version>\NonVRMod.dll. Pick the one matching this game.
 $supported = @(Get-ChildItem (Join-Path $here "dist") -Directory -ErrorAction SilentlyContinue |
     Where-Object { Test-Path (Join-Path $_.FullName "NonVRMod.dll") } | ForEach-Object { $_.Name } | Sort-Object)
-$verFile = Join-Path $GameDir "BeatSaberVersion.txt"
-$ver = if (Test-Path $verFile) { [regex]::Match((Get-Content $verFile -Raw), '^\s*(\d+\.\d+\.\d+)').Groups[1].Value } else { "" }
+. (Join-Path $here "GameVersion.ps1")
+$ver = Get-GameVersion $GameDir
 if (-not $ver) {
-    Write-Host "Could not read the game version (BeatSaberVersion.txt is missing in $GameDir)." -ForegroundColor Red
+    Write-Host "Could not read the game version from $GameDir." -ForegroundColor Red
     exit 1
 }
 if ($supported -notcontains $ver) {
@@ -109,6 +109,20 @@ if ($supported -notcontains $ver) {
 }
 Write-Host "Beat Saber ${ver}: supported."
 $modDll = Join-Path $here "dist\$ver\NonVRMod.dll"
+
+# BSIPA records the game version it last ran against in BeatSaberVersion.txt. If the game was updated since, BSIPA moves
+# everything in Plugins to "Old <version> Plugins" on the next start, which would remove the mod we are about to install.
+if ((Test-Path (Join-Path $GameDir "winhttp.dll")) -and (Test-Path (Join-Path $GameDir "IPA"))) {
+    $txt = Join-Path $GameDir "BeatSaberVersion.txt"
+    $seen = if (Test-Path $txt) { [regex]::Match((Get-Content $txt -Raw), '^\s*(\d+\.\d+\.\d+)').Groups[1].Value } else { "" }
+    if ($seen -and $seen -ne $ver) {
+        Write-Host ""
+        Write-Host "The game was updated from $seen to $ver since the mod loader last ran." -ForegroundColor Yellow
+        Write-Host "Start Beat Saber once, wait for the menu, close it, then run this installer again." -ForegroundColor Yellow
+        Write-Host "(Otherwise the mod loader moves the mod out of the Plugins folder on that first start.)"
+        exit 1
+    }
+}
 
 # BSIPA (the mod loader) - installed from its official release if missing.
 if (-not (Test-Path (Join-Path $GameDir "winhttp.dll")) -or -not (Test-Path (Join-Path $GameDir "IPA"))) {
