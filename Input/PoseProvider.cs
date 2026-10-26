@@ -198,8 +198,10 @@ namespace NonVRMod.Input
                 float mx = _menuLook.x, my = cfg.InvertY ? -_menuLook.y : _menuLook.y;
                 if (dx != 0f || dy != 0f || mx != 0f || my != 0f)
                 {
-                    HeadYaw = Mathf.Clamp(HeadYaw + dx * cfg.LookSpeed * dt + mx * cfg.MenuLookSpeed * dt, -cfg.HeadMaxYaw, cfg.HeadMaxYaw);
-                    HeadPitch = Mathf.Clamp(HeadPitch - dy * cfg.LookSpeed * dt - my * cfg.MenuLookSpeed * dt, -cfg.HeadMaxPitch, cfg.HeadMaxPitch);
+                    // Menus get a wider range than songs: some panels sit well to the side of, above or below the main screen.
+                    float maxYaw = InGame ? cfg.HeadMaxYaw : cfg.MenuMaxYaw, maxPitch = InGame ? cfg.HeadMaxPitch : cfg.MenuMaxPitch;
+                    HeadYaw = Mathf.Clamp(HeadYaw + dx * cfg.LookSpeed * dt + mx * cfg.MenuLookSpeed * dt, -maxYaw, maxYaw);
+                    HeadPitch = Mathf.Clamp(HeadPitch - dy * cfg.LookSpeed * dt - my * cfg.MenuLookSpeed * dt, -maxPitch, maxPitch);
                 }
                 else if (InGame && cfg.HeadReturnSpeed > 0f)
                 {

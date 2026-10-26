@@ -32,6 +32,8 @@ namespace NonVRMod
         public virtual float HeadMaxYaw { get; set; } = 60f;
         public virtual float HeadMaxPitch { get; set; } = 40f;
         public virtual float MenuLookSpeed { get; set; } = 110f;    // degrees per second the right stick turns the view in menus
+        public virtual float MenuMaxYaw { get; set; } = 120f;       // how far the menu view can turn sideways (degrees) so side panels are reachable
+        public virtual float MenuMaxPitch { get; set; } = 80f;      // how far it can look up/down in menus
         public virtual bool MenuCrosshair { get; set; } = false;    // tiny dot at the center of the screen in menus
         public virtual float HeadReturnSpeed { get; set; } = 0f;    // >0: view drifts back to center when D-pad is released
 

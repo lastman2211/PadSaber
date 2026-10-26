@@ -56,7 +56,7 @@ Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first r
 | `ManualDodge` | LB/RB/B dodging on or off |
 | `AutoDuck`, `AutoDuckMinHeight` | Auto-dodge also lowers the view under low walls, down to this height (meters) |
 | `AutoDodge`, `LookaheadMeters`, `MaxSideStep`, `DodgeSpeed` | Auto-dodge (offline play only) |
-| `MenuLookSpeed`, `MenuCrosshair` | How fast the right stick turns the view in menus; optional center dot |
+| `MenuLookSpeed`, `MenuMaxYaw`, `MenuMaxPitch`, `MenuCrosshair` | Menu view: turn speed, how far it can turn sideways / up and down (degrees), optional center dot |
 | `AimAssistOn`, `AimAssist`, `AimAssistRange` | Pull each saber toward the next block of its color while the stick is pushed that way (0 to 1, meters ahead) |
 | `DebugLog` | Log auto-dodge walls and aim-assist targets to `Logs\_latest.log` |
 
