@@ -19,7 +19,7 @@ Each stick sweeps its saber through an arc, so a flick is a swing and both hands
 | Look around (head yaw / pitch) | D-pad |
 | Recenter view | Click either stick (L3 / R3) |
 | Side-step left / right | LB / RB |
-| Duck | Hold B |
+| Duck (always manual) | Hold B |
 | Click / triggers | A or RT / LT |
 | Menus: turn the view (the laser stays at screen center) | Right stick |
 | Scroll lists | Left stick |
@@ -30,7 +30,7 @@ Each stick sweeps its saber through an arc, so a flick is a swing and both hands
 | Pause | Start |
 | Hide on-screen hints | F9 |
 
-The head only turns during songs; menus keep the view centered so the cursor lines up. Sabers stay in place when you look around, as they would in VR. Manual dodge overrides auto-dodge while a dodge button is held. Rumble follows the game's own haptics (cuts and so on).
+The head only turns during songs; menus keep the view centered so the cursor lines up. Sabers stay in place when you look around, as they would in VR. Auto-dodge only steps sideways; ducking is always yours (hold B), and auto-dodge still side-steps while you duck. LB/RB override the automatic side-step while held. Rumble follows the game's own haptics (cuts and so on).
 
 ## Tuning
 Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first run) and restart the game.
@@ -41,6 +41,7 @@ Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first r
 | `FollowSpeed` | How fast the saber follows the stick (higher = snappier) |
 | `ReturnSpeed` | How fast it recenters on release (lower = softer) |
 | `Preset` | 0 Soft, 1 Normal, 2 Fast (Y cycles it) |
+| `SquareStick` | On: a diagonal stick push reaches full range on both axes, so corner blocks are reachable |
 | `ResponseCurve`, `StickDeadzone` | Stick feel: higher curve = finer control near center |
 | `SwapSticks`, `InvertY` | Left-handed layout, inverted vertical axis |
 | `HandHeight`, `HandSpread`, `HandDepth`, `HandShift` | Where the hands rest and how much they drift |

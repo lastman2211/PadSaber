@@ -56,7 +56,7 @@ namespace NonVRMod.Display
 
             string dodge = PluginConfig.Instance.AutoDodge ? "ON" : "OFF";
             string text = XInput.Connected
-                ? $"Preset: {PoseProvider.PresetName} (Y) | Look: D-pad (stick click recenters) | Dodge: LB/RB/B | Auto-dodge {dodge} (Back) | Aim assist {(PluginConfig.Instance.AimAssistOn ? "ON" : "OFF")} (LT+Y) | Help: X | Hide: F9"
+                ? $"Preset: {PoseProvider.PresetName} (Y) | Look: D-pad (stick click recenters) | Dodge: LB/RB, duck: B | Auto-dodge {dodge} (Back) | Aim assist {(PluginConfig.Instance.AimAssistOn ? "ON" : "OFF")} (LT+Y) | Help: X | Hide: F9"
                 : "No gamepad detected. Plug in an Xbox-style controller (XInput).";
             GUI.Label(new Rect(10, 6, Screen.width - 20, 24), text, _label);
 

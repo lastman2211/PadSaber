@@ -27,7 +27,7 @@ namespace NonVRMod.Dodge
                 Plugin.Log.Info($"Auto-dodge {(cfg.AutoDodge ? "ON" : "OFF")}");
             }
 
-            if (PoseProvider.ManualDodgeHeld) return; // manual lean/duck is overriding
+            if (PoseProvider.ManualSideHeld) return; // LB/RB is overriding the side-step (B only ducks; it does not block this)
 
             if (!cfg.AutoDodge) _target = Vector3.zero;
             else if (Time.unscaledTime >= _nextPoll)
@@ -36,7 +36,8 @@ namespace NonVRMod.Dodge
                 _target = Solve(cfg);
             }
 
-            PoseProvider.HeadOffset = Vector3.MoveTowards(PoseProvider.HeadOffset, _target, cfg.DodgeSpeed * Time.unscaledDeltaTime);
+            // Auto-dodge only owns the side-step. Height belongs to the player (hold B), see PoseProvider.UpdateManualDodge.
+            PoseProvider.HeadOffset.x = Mathf.MoveTowards(PoseProvider.HeadOffset.x, _target.x, cfg.DodgeSpeed * Time.unscaledDeltaTime);
         }
 
         private Vector3 Solve(PluginConfig cfg)
@@ -57,20 +58,18 @@ namespace NonVRMod.Dodge
             }
             if (_threats.Count == 0) return Vector3.zero;
 
-            float stand = cfg.StandingHeadHeight, duck = cfg.DuckHeadHeight - stand;
+            // Evaluate at the player's current height, so a manual duck (B) under a ceiling wall counts as clear.
+            float headY = cfg.StandingHeadHeight + PoseProvider.HeadOffset.y;
             Vector3 best = Vector3.zero;
             float bestCost = float.MaxValue;
             for (float x = -cfg.MaxSideStep; x <= cfg.MaxSideStep + 1e-4f; x += 0.1f)
             {
-                foreach (float dy in new[] { 0f, duck })
-                {
-                    if (Hits(x, stand + dy)) continue;
-                    // Prefer small moves, avoid ducking unless needed, and avoid flipping sides.
-                    float cost = Mathf.Abs(x) + Mathf.Abs(dy) * 1.5f + Mathf.Abs(x - PoseProvider.HeadOffset.x) * 0.25f;
-                    if (cost < bestCost) { bestCost = cost; best = new Vector3(x, dy, 0f); }
-                }
+                int hits = CountHits(x, headY);
+                // Fewest walls first (none when possible), then small moves, and avoid flipping sides.
+                float cost = hits * 100f + Mathf.Abs(x) + Mathf.Abs(x - PoseProvider.HeadOffset.x) * 0.25f;
+                if (cost < bestCost) { bestCost = cost; best = new Vector3(x, 0f, 0f); }
             }
-            return bestCost < float.MaxValue ? best : PoseProvider.HeadOffset; // no safe pose: hold position
+            return best;
         }
 
         // World-space box of a wall: union of all its child renderers (the frame and the core are separate meshes, and the
@@ -93,15 +92,16 @@ namespace NonVRMod.Dodge
             return b.size.sqrMagnitude > 1e-4f;
         }
 
-        private bool Hits(float x, float y)
+        private int CountHits(float x, float y)
         {
+            int n = 0;
             foreach (var b in _threats)
             {
                 bool xOverlap = x + HeadHalfW > b.min.x && x - HeadHalfW < b.max.x;
                 bool yOverlap = y + HeadHalfH > b.min.y && y - HeadHalfH < b.max.y;
-                if (xOverlap && yOverlap) return true;
+                if (xOverlap && yOverlap) n++;
             }
-            return false;
+            return n;
         }
     }
 }

@@ -41,9 +41,10 @@ namespace NonVRMod.Input
         public static float PresetShownUntil { get; private set; }
         public static float AimAssistShownUntil { get; private set; }
 
-        /// <summary>True while a manual dodge button is held; AutoDodge stays out of the way.</summary>
-        public static bool ManualDodgeHeld =>
-            PluginConfig.Instance.ManualDodge && (XInput.Held(XInput.LB) || XInput.Held(XInput.RB) || XInput.Held(XInput.B));
+        /// <summary>True while LB/RB is held; AutoDodge stays out of the way of the side-step. B (duck) does not count:
+        /// height is the player's, the side-step stays automatic.</summary>
+        public static bool ManualSideHeld =>
+            PluginConfig.Instance.ManualDodge && (XInput.Held(XInput.LB) || XInput.Held(XInput.RB));
 
         public static string PresetName => PresetNames[Mathf.Clamp(PluginConfig.Instance.Preset, 0, PresetNames.Length - 1)];
 
@@ -84,6 +85,7 @@ namespace NonVRMod.Input
             float lt = XInput.LT, rt = XInput.RT;
             if (cfg.SwapSticks) { var t = ls; ls = rs; rs = t; var tt = lt; lt = rt; rt = tt; }
             if (cfg.InvertY) { ls.y = -ls.y; rs.y = -rs.y; }
+            if (cfg.SquareStick) { ls = Squared(ls); rs = Squared(rs); }
 
             if (aimCombo || UnityEngine.Input.GetKeyDown(KeyCode.F7))
             {
@@ -143,6 +145,16 @@ namespace NonVRMod.Input
             rot = Quaternion.Euler(pitch, yaw, 0f);
         }
 
+        // A stick is a circle: pushed fully diagonal each axis reads only ~0.71, which leaves the saber short of the corner
+        // blocks. Stretch the circle onto a square so the diagonal reaches 1 on both axes (direction is unchanged).
+        private static Vector2 Squared(Vector2 s)
+        {
+            float m = Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.y));
+            if (m < 1e-3f) return s;
+            s *= s.magnitude / m;
+            return new Vector2(Mathf.Clamp(s.x, -1f, 1f), Mathf.Clamp(s.y, -1f, 1f));
+        }
+
         private static float Curve(float v, float exp) => Mathf.Sign(v) * Mathf.Pow(Mathf.Abs(v), Mathf.Max(0.5f, exp));
 
         // Menus: park the left hand and point the right laser through the center of the screen. The right stick turns the
@@ -195,14 +207,14 @@ namespace NonVRMod.Input
             HeadRotation = Quaternion.Euler(HeadPitch, HeadYaw, 0f);
         }
 
-        // LB / RB side-step, hold B to duck. While held it overrides auto-dodge.
+        // LB / RB side-step (overrides auto-dodge while held). Hold B to duck; the height is always the player's.
         private void UpdateManualDodge(PluginConfig cfg, float dt)
         {
-            if (!ManualDodgeHeld) return;
+            float duck = cfg.ManualDodge && XInput.Held(XInput.B) ? cfg.DuckHeadHeight - cfg.StandingHeadHeight : 0f;
+            HeadOffset.y = Mathf.MoveTowards(HeadOffset.y, duck, cfg.DodgeSpeed * dt);
+            if (!ManualSideHeld) return;
             float x = (XInput.Held(XInput.RB) ? 1f : 0f) - (XInput.Held(XInput.LB) ? 1f : 0f);
-            float y = XInput.Held(XInput.B) ? cfg.DuckHeadHeight - cfg.StandingHeadHeight : 0f;
-            Vector3 target = new Vector3(x * cfg.MaxSideStep, y, 0f);
-            HeadOffset = Vector3.MoveTowards(HeadOffset, target, cfg.DodgeSpeed * dt);
+            HeadOffset.x = Mathf.MoveTowards(HeadOffset.x, x * cfg.MaxSideStep, cfg.DodgeSpeed * dt);
         }
 
         private void LateUpdate()

@@ -35,6 +35,7 @@ namespace NonVRMod
 
         // Gamepad controls
         public virtual bool SwapSticks { get; set; } = false;       // left-handed layout
+        public virtual bool SquareStick { get; set; } = true;       // diagonal reaches full range on both axes (corner blocks)
         public virtual bool InvertY { get; set; } = false;
         public virtual float StickDeadzone { get; set; } = 0.18f;
         public virtual float ResponseCurve { get; set; } = 1.2f;    // 1 = linear, higher = finer control near center
