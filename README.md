@@ -1,11 +1,14 @@
 # BSnonvrmod
 
-Play Beat Saber **1.40.8** on a normal PC with an Xbox-style (XInput) gamepad. No headset or OpenXR runtime needed. Includes head look, manual and automatic dodging, aim assist toward the next block, and controller rumble.
+Play Beat Saber on a normal PC with an Xbox-style (XInput) gamepad. No headset or OpenXR runtime needed. Includes head look, manual and automatic dodging, aim assist toward the next block, and controller rumble.
 
 You need your own Steam copy of the game. This repo contains only the mod; no game files.
 
+## Supported game versions
+Only two versions are supported: **1.40.8** and **1.45.3**. The installer reads your game's version and installs the matching build, or stops with a message if your version is neither. On Steam you can pick a version under Properties > Betas.
+
 ## Install
-1. Install Beat Saber 1.40.8 (Steam, Oculus/Meta Store or any other copy) and close it.
+1. Install a supported Beat Saber version (Steam, Oculus/Meta Store or any other copy) and close it.
 2. Run `Install.bat`. It looks for your game (Steam libraries and Oculus folders) and asks where Beat Saber is:
    - press **Enter** to use the folder it found,
    - **paste** a folder path (quotes and a trailing `\` are fine), or
@@ -62,9 +65,9 @@ Edit `UserData\NonVRMod.json` in the game folder (the game creates it on first r
 
 ## Build from source
 ```
-dotnet build -c Release -p:BeatSaberDir="C:\Program Files (x86)\Steam\steamapps\common\Beat Saber"
+Build.bat "C:\Program Files (x86)\Steam\steamapps\common\Beat Saber"
 ```
-BSIPA must already be installed in that game folder. The DLL is copied to `Plugins` automatically; copy `bin\Release\net472\NonVRMod.dll` to `dist\` to update the installer.
+Run it once per supported version, with that version installed (BSIPA must already be in the game folder). It reads the game version, stamps it into the mod's manifest, and writes `dist\<version>\NonVRMod.dll`, which `Install.bat` picks by version. The DLL is also copied into that game's `Plugins` folder.
 
 ## If it doesn't work
-Open `Logs\_latest.log` in the game folder. Lines like `Patch target not found: X.Y` mean the game's class names differ from 1.40.8; the patches are in `Patches/`. If the on-screen hint says no gamepad was detected, the controller must be XInput-compatible (Xbox layout) and connected before the game starts.
+Open `Logs\_latest.log` in the game folder. Lines like `Patch target not found: X.Y` mean the game's class names differ from the version this build was made for; the patches are in `Patches/`. If the on-screen hint says no gamepad was detected, the controller must be XInput-compatible (Xbox layout) and connected before the game starts.
