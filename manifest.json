@@ -4,7 +4,7 @@
   "description": "Play Beat Saber without VR using a gamepad: head look, auto-dodge, aim assist and rumble.",
   "gameVersion": "1.40.8",
   "id": "NonVRMod",
-  "name": "NonVRMod",
+  "name": "PadSaber",
   "version": "0.9.0",
   "dependsOn": {
     "BSIPA": "^4.3.0"

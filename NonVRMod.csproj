@@ -6,7 +6,9 @@
     <AssemblyName>NonVRMod</AssemblyName>
     <RootNamespace>NonVRMod</RootNamespace>
     <Nullable>disable</Nullable>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- BeatMods wants the assembly version to equal manifest.json's version, so read it from there. -->
+    <Version>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\manifest.json')), '"version":\s*"([^"]+)"').Groups[1].Value)</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Point this at YOUR legitimate Steam install: dotnet build -p:BeatSaberDir="D:\Steam\steamapps\common\Beat Saber" -->
     <BeatSaberDir Condition="'$(BeatSaberDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Beat Saber</BeatSaberDir>
