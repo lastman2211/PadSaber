@@ -21,9 +21,12 @@ If you change game versions after the mod loader (BSIPA) was installed, start th
    - press **Enter** to use the folder it found,
    - **paste** a folder path (quotes and a trailing `\` are fine), or
    - type **B** to pick the folder in a window.
-   The folder must contain `Beat Saber.exe`. It then installs the BSIPA mod loader if missing (downloaded from its official release) and copies the mod into `Plugins`. Your choice is remembered for next time.
+   The folder must contain `Beat Saber.exe`. It then installs the BSIPA mod loader if missing (downloaded from its official release) and installs BS Utils (from BeatMods, when listed for your version) and copies the mod into `Plugins`. Your choice is remembered for next time.
    To skip the question: `Install.bat "D:\Games\Beat Saber"`.
 3. Plug in a controller and start the game with `Launch.bat` (it starts the folder you chose, or Steam if none was saved), or as usual from Steam / your launcher. Do not use the `fpfc` launch option.
+
+## Leaderboards
+PadSaber disables score submission (through BS Utils) because auto-dodge and aim assist change gameplay. Scores are not sent to leaderboards while the mod is installed. BS Utils is not listed on BeatMods for 1.45.3; install it manually there if you use leaderboard mods, otherwise the log shows a warning and submission stays enabled.
 
 ## Controls
 Each stick sweeps its saber through an arc, so a flick is a swing and both hands move independently. When you let go, the saber returns to center slowly so the rebound does not cut anything.

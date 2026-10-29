@@ -35,7 +35,34 @@ namespace NonVRMod
             go.AddComponent<Input.PoseProvider>();
             go.AddComponent<Dodge.AutoDodge>();
             go.AddComponent<Display.DesktopView>();
+            DisableScoreSubmission();
             Log.Info("NonVRMod started.");
+        }
+
+        // Auto-dodge and aim assist change gameplay, so scores are never submitted while PadSaber is loaded.
+        // Calls BS Utils by reflection so the mod still loads if BS Utils is missing (then it only warns).
+        private static void DisableScoreSubmission()
+        {
+            try
+            {
+                System.Type type = null;
+                foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (asm.GetName().Name == "BS_Utils") { type = asm.GetType("BS_Utils.Gameplay.ScoreSubmission"); break; }
+                }
+                var disable = type?.GetMethod("ProlongedDisableSubmission", new[] { typeof(string) });
+                if (disable == null)
+                {
+                    Log.Warn("BS Utils not found: score submission is NOT disabled. Install BS Utils to keep assisted scores off leaderboards.");
+                    return;
+                }
+                disable.Invoke(null, new object[] { "PadSaber" });
+                Log.Info("Score submission disabled (PadSaber).");
+            }
+            catch (System.Exception e)
+            {
+                Log.Warn("Could not disable score submission: " + e.Message);
+            }
         }
 
         [OnExit]

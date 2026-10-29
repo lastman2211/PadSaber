@@ -145,6 +145,31 @@ if (-not (Test-Path (Join-Path $GameDir "winhttp.dll")) -or -not (Test-Path (Joi
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+# BS Utils - lets PadSaber turn score submission off. Fetched from BeatMods for this game version when it is listed there.
+$plugins = Join-Path $GameDir "Plugins"
+New-Item -ItemType Directory -Path $plugins -Force | Out-Null
+if (-not (Test-Path (Join-Path $plugins "BS_Utils.dll"))) {
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $list = Invoke-RestMethod "https://beatmods.com/api/mods?gameName=BeatSaber&gameVersion=$ver&status=verified" -Headers @{ "User-Agent" = "BSnonvrmod-installer" }
+        $bsu = $list.mods | Where-Object { $_.mod.name -eq "BS Utils" } | Select-Object -First 1
+        if ($bsu) {
+            Write-Host "Installing BS Utils..."
+            $tmp = Join-Path $env:TEMP "bsnonvr_bsu"
+            if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
+            New-Item -ItemType Directory -Path $tmp | Out-Null
+            Invoke-WebRequest "https://beatmods.com/cdn/mod/$($bsu.latest.zipHash).zip" -OutFile (Join-Path $tmp "bsu.zip") -UseBasicParsing
+            Expand-Archive (Join-Path $tmp "bsu.zip") -DestinationPath (Join-Path $tmp "x") -Force
+            Copy-Item (Join-Path $tmp "x\*") $GameDir -Recurse -Force
+            Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+        } else {
+            Write-Host "BS Utils is not listed for $ver; install it yourself to keep assisted scores off leaderboards." -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "Could not install BS Utils ($($_.Exception.Message)). Install it manually to keep assisted scores off leaderboards." -ForegroundColor Yellow
+    }
+}
+
 # The mod itself.
 $plugins = Join-Path $GameDir "Plugins"
 New-Item -ItemType Directory -Path $plugins -Force | Out-Null
