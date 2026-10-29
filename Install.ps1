@@ -148,7 +148,7 @@ if (-not (Test-Path (Join-Path $GameDir "winhttp.dll")) -or -not (Test-Path (Joi
 # BS Utils - lets PadSaber turn score submission off. Fetched from BeatMods for this game version when it is listed there.
 $plugins = Join-Path $GameDir "Plugins"
 New-Item -ItemType Directory -Path $plugins -Force | Out-Null
-if (-not (Test-Path (Join-Path $plugins "BS_Utils.dll"))) {
+if ($true) {
     try {
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $list = Invoke-RestMethod "https://beatmods.com/api/mods?gameName=BeatSaber&gameVersion=$ver&status=verified" -Headers @{ "User-Agent" = "BSnonvrmod-installer" }
@@ -158,9 +158,16 @@ if (-not (Test-Path (Join-Path $plugins "BS_Utils.dll"))) {
             $tmp = Join-Path $env:TEMP "bsnonvr_bsu"
             if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
             New-Item -ItemType Directory -Path $tmp | Out-Null
-            Invoke-WebRequest "https://beatmods.com/cdn/mod/$($bsu.latest.zipHash).zip" -OutFile (Join-Path $tmp "bsu.zip") -UseBasicParsing
-            Expand-Archive (Join-Path $tmp "bsu.zip") -DestinationPath (Join-Path $tmp "x") -Force
-            Copy-Item (Join-Path $tmp "x\*") $GameDir -Recurse -Force
+            # BS Utils plus its dependencies other than BSIPA (e.g. Ini Parser), which BSIPA needs present or it ignores BS Utils.
+            $wanted = @($bsu) + @($list.mods | Where-Object { $bsu.latest.dependencies -contains $_.latest.id -and $_.mod.name -ne "BSIPA" })
+            $n = 0
+            foreach ($m in $wanted) {
+                $n++
+                $zip = Join-Path $tmp "m$n.zip"
+                Invoke-WebRequest "https://beatmods.com/cdn/mod/$($m.latest.zipHash).zip" -OutFile $zip -UseBasicParsing
+                Expand-Archive $zip -DestinationPath (Join-Path $tmp "x$n") -Force
+                Copy-Item (Join-Path $tmp "x$n\*") $GameDir -Recurse -Force
+            }
             Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
         } else {
             Write-Host "BS Utils is not listed for $ver; install it yourself to keep assisted scores off leaderboards." -ForegroundColor Yellow
